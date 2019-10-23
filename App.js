@@ -12,6 +12,8 @@ import SelectPhotosScreen from './compoments/SelectPhotosScreen';
 import DisplayPhotoScreen from './compoments/DisplayOnePhotoScreen';
 import GroupPhotosScreen from './compoments/GroupPhotosScreen';
 import GroupsScreen from './compoments/GroupsScreen';
+import ProfileScreen from './compoments/ProfileScreen';
+
 import SignInScreen from './compoments/SignInScreen';
 import AuthLoadingScreen from './compoments/AuthLoadingScreen';
 
@@ -29,7 +31,8 @@ const AppStack = createStackNavigator(
   SelectPhotos: SelectPhotosScreen,
   Groups: GroupsScreen,
   GroupPhotos: GroupPhotosScreen,
-  DisplayPhoto: DisplayPhotoScreen,    
+  DisplayPhoto: DisplayPhotoScreen,   
+  Profile: ProfileScreen, 
   },
   {
   initialRouteName: 'Groups',

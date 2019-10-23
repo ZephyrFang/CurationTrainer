@@ -12,33 +12,24 @@ class GroupsScreen extends Component {
 
     static navigationOptions = ({navigation}) => {
         return {
-            title: 'Photo Groups, ' + global.email,
+            title: 'Photo Groups',
             headerLeft: (
                 <Button 
                     onPress={navigation.getParam('removeGroups')}
                     title='Remove All'
                 />
               ),
+              headerRight: (
 
-            headerRight: (
-                <Button                 
-                onPress={() => {
-                    firebase.auth().signOut();
-                    AsyncStorage.removeItem('userId').then(() =>{
-                        /* Clear up global properties. Otherwise the next signed In user will see the previous user's photo groups. */
-                        global.photos = [];
-                        global.groups = [];
-                        global.email = '';
-                        global.userId = 0;
+                <View style={{flex: 0.1, flexDirection:'row' }}>
+ 
+                  <TouchableHighlight style={{width: 50}} onPress={() => {navigation.navigate('Profile')}}>
+                    <Image source={require('./images/user.png')} style={{width:25, height:25}} />
+                  </TouchableHighlight> 
+                </View>
+        
+              ),
 
-                        navigation.push('SignIn');
-                    }); 
-                    //navigation.push('AuthLoading');
-                }}
-                title='Sign Out'
-            />
-
-            )
         };
     }
 

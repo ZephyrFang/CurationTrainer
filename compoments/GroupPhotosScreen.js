@@ -27,7 +27,9 @@ class GroupPhotosScreen extends Component {
           <TouchableHighlight style={{width: 50}} onPress={navigation.getParam('DeleteGroup')}>
             <Image source={require('./images/delete_red.png')} style={{width:25, height:25}} />
           </TouchableHighlight>  
-  
+          <TouchableHighlight style={{width: 50}} onPress={() => navigation.navigate('Profile')}>
+            <Image source={require('./images/user.png')} style={{width:25, height:25}} />
+          </TouchableHighlight> 
         </View>
 
       ),

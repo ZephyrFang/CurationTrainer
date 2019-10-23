@@ -30,6 +30,9 @@ class DisplayPhotoScreen extends Component{
         <Image  source={params.is_cover? require('./images/gold-medal.png') : require('./images/first.png')} 
             style={{width:30, height:30}} />
             </TouchableHighlight>
+            <TouchableHighlight style={{width: 50}} onPress={() => navigation.navigate('Profile')}>
+            <Image source={require('./images/user.png')} style={{width:25, height:25}} />
+          </TouchableHighlight> 
 
       </View>  
 

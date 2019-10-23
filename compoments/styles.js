@@ -28,12 +28,20 @@ export default styles = StyleSheet.create({
     fontSize: 16,
     alignItems: 'center',
     color: '#fff',
+
   },
   bold: {
     fontWeight: 'bold',
   },
   info: {
     fontSize: 12,
+  },
+
+  profile_text: {
+    fontSize: 30,
+    alignItems: 'center',
+    fontWeight: 'bold',
+    
   },
 
   imageGrid: {
