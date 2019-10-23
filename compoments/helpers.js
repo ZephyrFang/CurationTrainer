@@ -86,17 +86,25 @@ export async function RetrieveData (id){
     }
   }
 
-  export async function cloud_upload_photo (uri, group_id, is_cover, email) {
+  export async function cloud_upload_photo (photo, group_id, is_cover, email) {
     /* Upload one photo to Cloud (Firebase Storage) */
 
     console.log('>>>>>In cloud_upload_photo function.<<<<');    
     //alert('In cloud_upload_photo, email is: ' + email);
 
-
+    /* Resize the photo --> the short side is 1024 and presever aspect ratio */
+    let size;
+    if (photo.width < photo.length){
+      size = { width: 1024};
+    }
+    else{
+      size = { height: 1024};
+    }
 
     ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: {width: 300}}], // resize to width of 300 and presever aspect ratio
+      photo.uri,
+      //[{ resize: {width: 1024}}], // resize to width of 300 and presever aspect ratio
+      [{ resize: size }],
       { compress: 0.7, format: 'jpeg'},
       
       ).then((resized_result) => 
@@ -108,7 +116,7 @@ export async function RetrieveData (id){
                  ).then((fetched_result) => {
                    fetched_result.blob()
                           .then((blobed_result) => {                            
-                                  var id = get_id_from_uri(uri);
+                                  var id = get_id_from_uri(photo.uri);
                                   var photo_name = id + '?is_cover=' + is_cover;
                                   console.log('photo_name: ', photo_name);
 

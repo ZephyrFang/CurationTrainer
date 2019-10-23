@@ -79,7 +79,7 @@ class GroupPhotosScreen extends Component {
       if ( p.uri == cover ){
         is_cover = true;
       }
-      let result = cloud_upload_photo(p.uri, group_id, is_cover, email);
+      let result = cloud_upload_photo(p, group_id, is_cover, email);
       if ( !result ) {
         return;
       }

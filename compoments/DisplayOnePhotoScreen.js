@@ -182,14 +182,16 @@ class DisplayPhotoScreen extends Component{
                   if ( this.state.cover == uri ){
                     /* Cover photo has been deleted, change cover to the first photo */                    
 
-                    const first_uri = photos[0].uri;  
+                    const first_uri = photos[0].uri; 
+                    const first_photo = photos[0];
+
                     this.setState({'cover': first_uri });                            
                     group.cover = first_uri;
 
                     /* Sync with Cloud */
                     is_cover = true;
                     cloud_delete_photo(first_uri, group_id, false, email);
-                    cloud_upload_photo(first_uri, group_id, true, email);                                        
+                    cloud_upload_photo(first_photo, group_id, true, email);                                        
                   }
                   
                   groups[g_index] = group;
@@ -262,9 +264,17 @@ class DisplayPhotoScreen extends Component{
       const old_cover = this.state.cover;
       const email = global.email;
       cloud_delete_photo(old_cover, group_id, true, email);
-      cloud_upload_photo(old_cover, group_id, false, email);
+
+      var old_cover_photo = global.photos.find((photo) => {
+        if ( photo.uri == old_cover){
+          return photo;
+        }
+
+      });
+      cloud_upload_photo(old_cover_photo, group_id, false, email);
+
       cloud_delete_photo(uri, group_id, false, email);
-      cloud_upload_photo(uri, group_id, true, email);
+      cloud_upload_photo(this.state.photo, group_id, true, email);
 
       //global.cover = uri;
       this.setState({ 
