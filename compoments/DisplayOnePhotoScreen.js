@@ -15,24 +15,27 @@ class DisplayPhotoScreen extends Component{
 
   static navigationOptions = ({navigation}) => {
     const { params = {}} = navigation.state;
+
     return {
     title: navigation.getParam('dt', ''),
     headerLeft: (
       <Button onPress={navigation.getParam('backToGroupPhotos')}  title='Group Photos' />
     ),
     headerRight: (
-      <View style={{ flex: 0.1, flexDirection:'row', }}>
+      <View  style={{ flex: 0.1, flexDirection:'row', }}>
           
         <TouchableHighlight style={{width: 50}} onPress={navigation.getParam('deletePhoto')}>
           <Image source={require('./images/delete.png')} style={{width:25, height:25}} />
         </TouchableHighlight>   
+
         <TouchableHighlight style={{width: 50}} onPress={navigation.getParam('setCover')}>
-        <Image  source={params.is_cover? require('./images/gold-medal.png') : require('./images/first.png')} 
+          <Image  source={params.is_cover? require('./images/gold-medal.png') : require('./images/first.png')} 
             style={{width:30, height:30}} />
-            </TouchableHighlight>
-            <TouchableHighlight style={{width: 50}} onPress={() => navigation.navigate('Profile')}>
+        </TouchableHighlight>
+
+        <TouchableHighlight style={{width: 50}} onPress={() => navigation.navigate('Profile')}>
             <Image source={require('./images/user.png')} style={{width:25, height:25}} />
-          </TouchableHighlight> 
+        </TouchableHighlight>
 
       </View>  
 
@@ -45,6 +48,7 @@ class DisplayPhotoScreen extends Component{
     cover: 0,
     //photos: [],
     photo: null,
+    //photo_id: 0,
     is_cover: false,
     p_w: 100,
     p_h: 100,
@@ -72,10 +76,11 @@ class DisplayPhotoScreen extends Component{
       setCover: this._setCover,
       backToGroupPhotos: this._backToGroupPhotos,
       //render_cover_icon: this._render_cover_icon(),
+      //photo_id: this.state.photo_id,
+      icon_path: './images/star.png',
     });
 
   }
-
 
 
   componentWillMount () {
@@ -99,6 +104,7 @@ class DisplayPhotoScreen extends Component{
 
     this.setState({
       photo: photo,
+      //photo_id: photo.id,
       cover: cover,
       group_id: group_id,
       is_cover: is_cover,
@@ -311,7 +317,27 @@ class DisplayPhotoScreen extends Component{
     } 
   }
 
+  PhotoSwiped = (e, state) => {
+    var photo = global.photos[state.index];
+    console.log('photo swiped, index: ', state.index);
+    console.log('photo.uri: ', photo.uri);
+    
 
+
+    let is_cover = false;
+    if ( photo.uri == this.state.cover ){
+      is_cover = true;
+    }
+
+    this.setState({
+      photo: photo,
+      //photo_id: photo.id,
+      is_cover: is_cover,
+    });
+    console.log('is cover?', is_cover);
+ 
+    this.props.navigation.setParams({'is_cover': is_cover})
+  }
 
   SetPhotoSize = (photo) => {
 
@@ -401,19 +427,7 @@ class DisplayPhotoScreen extends Component{
     });
   }*/
 
-  PhotoSwiped = (e, state) => {
-    var photo = global.photos[state.index];
-    console.log('photo swiped, index: ', state.index);
-    console.log('photo.uri: ', photo.uri);
-    this.setState({
-      photo: photo,
-    });
 
-    /*this.refs['set_cover_icon'].setNativeProps({
-      source: require('./images/star.png'),
-
-    });*/
-  }
 
   /*render(){
 
