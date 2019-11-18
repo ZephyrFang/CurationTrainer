@@ -1,13 +1,30 @@
 import React, { Component } from 'react';
-import { AsyncStorage, Alert } from 'react-native'
+import { AsyncStorage, Alert, Button, View } from 'react-native'
 //import { IText, Button, View, TouchableHighlight, FlatList, TouchableOpacity, Alert, Platform, Dimensions } from 'react-native';
-import { Item, Form, Input, Button, Label, Container, Text } from 'native-base';
+import { Item, Form, Input, Label, Container, Text } from 'native-base';
+import { Button as NBButton } from 'native-base';
 import * as firebase from 'firebase';
 import styles from './styles';
+//import { Image, ScrollView, View, TouchableHighlight, FlatList, TouchableOpacity, Alert, Platform, Dimensions } from 'react-native';
 
 import { RetrieveData, StoreData } from './helpers.js'
 
-class AuthenticationScreen extends Component{
+class LoginScreen extends Component{
+    static navigationOptions = ({ navigation }) => {
+        return {
+        title: 'Login',    
+    
+        headerRight: (
+          <View style={{flex: 0.1, flexDirection:'row' }}> 
+             <Button                     
+                    onPress={() => {navigation.navigate('Register')}}
+                    title='Register'
+                />
+
+          </View>
+          )  
+        };
+      }
 
     state = {
         email: '',
@@ -41,6 +58,7 @@ class AuthenticationScreen extends Component{
                     })           
                       .catch((error) => {
                         console.log('Error: ', error);
+                        alert(error);
                       })                             
                 } 
 
@@ -48,34 +66,13 @@ class AuthenticationScreen extends Component{
         }
         catch (error){
             console.log(error.toString(error));
+            alert(error);
         }
     }
 
-    SignUp = ( email, password ) => {
-        const { navigation } = this.props;
-        try {
-            firebase.auth().createUserWithEmailAndPassword(email, password);
-
-            firebase.auth().onAuthStateChanged(function(user) {
-                if (user) {
-                    AsyncStorage.setItem('userId', JSON.stringify(user.uid)).then(() => {
-                        global.email = email;
-                        global.userId = user.uid;
-                        navigation.push('Groups');  
-                    })           
-                      .catch((error) => {
-                        console.log('Error: ', error);
-                      })                             
-                } 
-
-              });
-        }
-        catch (error) {
-            console.log(error.toString(error));
-        }
-    }
 
     render() {
+        
         return (
             <Container style={styles.authentication_container}>
                 <Form>
@@ -96,18 +93,19 @@ class AuthenticationScreen extends Component{
                         />
                     </Item>
 
-                    <Button full rounded onPress={ () => this.SignIn(this.state.email, this.state.password)}>
-                        <Text>SignIn</Text>
-                    </Button>
-                    <Button full rounded success style={{ marginTop: 20 }}
-                            onPress={() => this.SignUp( this.state.email, this.state.password )}
+                    <NBButton full rounded onPress={ () => this.SignIn(this.state.email, this.state.password)}
+                    
                     >
-                        <Text>Signup</Text>
-                    </Button>
+                                 <Text>Login</Text>
+                    </NBButton>
+                        
+                    
+                  
+                        
                 </Form>
             </Container>
         );
     }
 }
 
-export default AuthenticationScreen;
+export default LoginScreen;

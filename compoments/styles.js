@@ -93,6 +93,7 @@ var styles = StyleSheet.create({
     flex: 1,
     height: 150,
     width: null,
+    //height: 150,
   },
 
 
