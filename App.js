@@ -8,14 +8,15 @@ import * as firebase from 'firebase';
 //import { Image, ScrollView, Text, Button, StyleSheet, View, TouchableHighlight } from 'react-native';
 //import CameraRoll from "@react-native-community/cameraroll";
 //import CameraRollPicker from 'react-native-camera-roll-picker';
-import SelectPhotosScreen from './compoments/SelectPhotosScreen';
+
+import AuthLoadingScreen from './compoments/AuthLoadingScreen';
 import DisplayPhotoScreen from './compoments/DisplayOnePhotoScreen';
 import GroupPhotosScreen from './compoments/GroupPhotosScreen';
 import GroupsScreen from './compoments/GroupsScreen';
 import ProfileScreen from './compoments/ProfileScreen';
-
+import SelectPhotosScreen from './compoments/SelectPhotosScreen';
 import SignInScreen from './compoments/SignInScreen';
-import AuthLoadingScreen from './compoments/AuthLoadingScreen';
+
 
 
 //import AlbumsScreen from './compoments/AlbumsScreen';

@@ -4,7 +4,9 @@ import styles from './styles';
 
 import CameraRoll from "@react-native-community/cameraroll";
 
-import { Permissions } from 'expo-permissions';
+//import { Permissions } from 'expo-permissions';
+import * as Permissions from 'expo-permissions';
+
 import { ImageBrowser } from 'expo-multiple-media-imagepicker';
 //import R from 'ramda';
 
@@ -31,9 +33,12 @@ class SelectPhotosScreen extends Component {
   }
 
   async componentDidMount () {
-    //Permissions.askAsync(Permissions.CAMERA_ROLL).then(d => console.log(d));
+    //Permissions.askAsync(Permissions.CAMERA_ROLL).then(d => console.log(d));    
 
-    const permission = await Permissions.getAsyn(Permissions.CAMERA_ROLL);
+    //const permission = await Permissions.getAsyn(Permissions.CAMERA_ROLL);
+    const permission = await Permissions.getAsync(Permissions.CAMERA_ROLL);
+    console.log('@@@@@@ @@@@@ @@@@@ In SelecthotosScreen componentDidMount function. permission status is: ', permission.status);
+
     if (permission.status !== 'granted') {
       console.log('**** Getting camera roll permission *****');
       const newPermission = await Permissions.askAsync(Permissions.CAMERA_ROLL);

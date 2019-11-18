@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "Curation Trainer",
+    "description": "Data Training for Curation App",
     "slug": "CurationTrainer",
     "privacy": "public",
     "sdkVersion": "34.0.0",
@@ -11,7 +12,7 @@
     ],
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/HappyMooseLogo.png",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -24,11 +25,14 @@
       "**/*"
     ],
     "ios": {
+      "bundleIdentifier": "nz.happymoose.curationtrainer",
       "supportsTablet": true,
       "infoPlist":{
-        "NSPhotoLibraryUsageDescription": "Give Expo experiences permission to access your photos.",
-        "NSPhotoLibraryAddUsageDescription": "Give Expo experiences perimssion to save photos."
-      }
+        "NSPhotoLibraryUsageDescription": "Users need to submit photos from their Photo Library to this app."        
+      }      
+    },
+    "android": {
+      "package": "nz.happymoose.curationtrainer"
     }
   }
 }

@@ -12,7 +12,7 @@ class AuthLoadingScreen extends Component {
 
         /* Fetch the token from storage then navigate to our appropriate place */
         const userId_from_device = await AsyncStorage.getItem('userId');
-        alert('userId from device: ', userId_from_device);
+        console.log('userId from device: ', userId_from_device);
 
         const { navigation } = this.props;
 
