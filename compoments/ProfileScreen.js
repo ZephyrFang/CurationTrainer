@@ -60,7 +60,7 @@ class ProfileScreen extends Component {
                 global.email = '';
                 global.userId = 0;
   
-                navigation.push('SignIn');
+                navigation.push('Login');
             });    
               
           },

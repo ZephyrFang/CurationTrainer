@@ -1,5 +1,7 @@
 import { AsyncStorage, Alert } from 'react-native'
 import * as firebase from 'firebase';
+import '@firebase/firestore';
+
 //import Resizer from 'react-image-file-resizer';
 //import ImageResizer from 'react-native-image-resizer';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -86,7 +88,107 @@ export async function RetrieveData (id){
     }
   }
 
-  export async function cloud_upload_photo (photo, group_id, is_cover, email) {
+  export function cloud_upload_photo_group(group_id, photos, cover, cover_id, email){
+
+    var photo_id;
+    var i;
+    for ( i=0; i<photos.length; i++) {
+      let p = photos[i];
+      if (p.uri == cover){
+        photo_id = cover_id;
+        
+      }
+      else{
+        const db = firebase.firestore();
+        var photo_ref = db.collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').doc();
+        /*.then(function(docRef){
+          console.log('Document written with ID: ', docRef.id);
+      })
+      .catch(function(error){
+          console.error('Error adding document: ', error);
+      });*/
+
+        photo_ref.set({
+          user: email,
+          group_id: group_id,
+        })
+        .then(function(docRef){
+          console.log('Document written with ID: ', docRef.id);
+        })
+        .catch(function(error){
+          console.error('Error adding document: ', error);
+        });
+
+        photo_id = photo_ref.id;   
+      }
+
+      cloud_upload_photo (p, group_id, photo_id, email);
+      
+    }
+  }
+
+  export async function cloud_upload_photo (photo, group_id, photo_id, email) {
+    /* Upload one photo to Cloud (Firebase Storage) */
+
+    console.log('>>>>>In cloud_upload_photo function.<<<<');    
+    //alert('In cloud_upload_photo, email is: ' + email);
+
+    /* Resize the photo --> the short side is 1024 and presever aspect ratio */
+    let size;
+    if (photo.width < photo.length){
+      size = { width: 1024};
+    }
+    else{
+      size = { height: 1024};
+    }
+
+    ImageManipulator.manipulateAsync(
+      photo.uri,
+      //[{ resize: {width: 1024}}], // resize to width of 300 and presever aspect ratio
+      [{ resize: size }],
+      { compress: 0.7, format: 'jpeg'},
+      
+      ).then((resized_result) => 
+      {        
+            console.log('Resize photo success!!!!, resized_result.uri: ', resized_result.uri);
+
+            fetch(
+                resized_result.uri
+                 ).then((fetched_result) => {
+                   fetched_result.blob()
+                          .then((blobed_result) => {                            
+                                  //var id = get_id_from_uri(photo.uri);
+                                  //var photo_name = id + '?is_cover=' + is_cover;
+                                  //console.log('photo_name: ', photo_name);
+
+                                  //var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_name);
+                                  var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_id);
+                                  ref.put(blobed_result)
+                                          .then((res) => {
+                                                //console.log('Success: ', res);
+                                                console.log('Success');
+
+                                                const dbh = firebase.firestore();
+                                                dbh.collection('users/photo_groups/photos').add({
+                                                  uri: 'CurationTrainer/' + email + '/' + group_id + '/' + photo_name,
+
+                                                });
+                                                
+                                                })
+                                          .catch((error) => {                                       
+                                              console.log('Error when upload: ', error)
+                                                }) 
+
+                          })
+                  });
+
+      }).catch((err) => {
+        console.log('err when resize photo. ', err);
+      });
+
+  }
+
+  export async function cloud_upload_photo_0 (photo, group_id, is_cover, email) {
     /* Upload one photo to Cloud (Firebase Storage) */
 
     console.log('>>>>>In cloud_upload_photo function.<<<<');    
@@ -125,6 +227,13 @@ export async function RetrieveData (id){
                                           .then((res) => {
                                                 //console.log('Success: ', res);
                                                 console.log('Success');
+
+                                                const dbh = firebase.firestore();
+                                                dbh.collection('users/photo_groups/photos').add({
+                                                  uri: 'CurationTrainer/' + email + '/' + group_id + '/' + photo_name,
+
+                                                });
+                                                
                                                 })
                                           .catch((error) => {                                       
                                               console.log('Error when upload: ', error)

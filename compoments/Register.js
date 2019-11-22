@@ -3,21 +3,24 @@ import { AsyncStorage, Alert, Button, View } from 'react-native'
 //import { IText, Button, View, TouchableHighlight, FlatList, TouchableOpacity, Alert, Platform, Dimensions } from 'react-native';
 import { Item, Form, Input, Label, Container, Text } from 'native-base';
 import { Button as NBButton } from 'native-base';
+
 import * as firebase from 'firebase';
+import '@firebase/firestore';
+
 import styles from './styles';
 
 import { RetrieveData, StoreData } from './helpers.js'
 
-class RegisterScreen extends Component{
-  
+class RegisterScreen extends Component{  
 
     state = {
         email: '',
-        password: ''
-    }
- 
+        password: '',
+        first_name: '',
+        last_name: ''
+    } 
 
-    SignUp = ( email, password ) => {
+    register = ( email, password, first_name, last_name ) => {
         const { navigation } = this.props;
         try {
             firebase.auth().createUserWithEmailAndPassword(email, password);
@@ -25,6 +28,22 @@ class RegisterScreen extends Component{
             firebase.auth().onAuthStateChanged(function(user) {
                 if (user) {
                     AsyncStorage.setItem('userId', JSON.stringify(user.uid)).then(() => {
+
+                        // Add new user to Firestore. 
+                        const db = firebase.firestore();
+                        db.collection('users').doc(email).set({
+                            first_name: first_name,
+                            last_name: last_name,
+                            email: email
+                        })                  
+                        .then(function(docRef){
+                            console.log('Document written with email: ', docRef.email);
+                        })
+                        .catch(function(error){
+                            console.error('Error adding document: ', error);
+
+                        });
+
                         global.email = email;
                         global.userId = user.uid;
                         navigation.push('Groups');  
@@ -47,6 +66,22 @@ class RegisterScreen extends Component{
         return (
             <Container style={styles.authentication_container}>
                 <Form>
+                <Item>
+                        <Label>First Name</Label>
+                        <Input autoCapitalize='none'
+                               autoCorrect={false}
+                               onChangeText={first_name => this.setState({first_name})}                               
+                        />
+                    </Item>
+
+                    <Item>
+                        <Label>Last Name</Label>
+                        <Input autoCapitalize='none'
+                               autoCorrect={false}
+                               onChangeText={last_name => this.setState({last_name})}                               
+                        />
+                    </Item>
+
                     <Item floatingLabel>
                         <Label>Email</Label>
                         <Input autoCapitalize='none'
@@ -66,7 +101,7 @@ class RegisterScreen extends Component{
  
                         
                     <NBButton full rounded success style={{ marginTop: 20 }}
-                            onPress={() => this.SignUp( this.state.email, this.state.password )}
+                            onPress={() => this.register( this.state.email, this.state.password, this.state.first_name, this.state.last_name )}
                             
                     >
                         <Text>Register</Text>

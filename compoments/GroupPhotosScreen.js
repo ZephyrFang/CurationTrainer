@@ -5,9 +5,11 @@ import uuid from 'react-native-uuid';
 //import AsyncStorage from '@react-native-community/async-storage';
 import {AsyncStorage} from 'react-native';
 
+import * as firebase from 'firebase';
+import '@firebase/firestore';
 
 //import * as GLOBAL from './global.js';
-import { RetrieveData, StoreData, cloud_delete_group, cloud_upload_photo } from './helpers.js';
+import { RetrieveData, StoreData, cloud_delete_group, cloud_upload_photo, cloud_upload_photo_group } from './helpers.js';
 
 
 class GroupPhotosScreen extends Component {
@@ -232,13 +234,9 @@ _deleteGroup = () => {
 
     console.log(' *** In GroupPhotosScreen saveNewGroup method.*********');    
 
-    const group_id = uuid.v1();
-    
-    //global.group_id = group_id;
-    //var photos = this.state.photos;
-    //var photos = global.photos;
-    //let photos = this.state.photos;
-    //console.log('photos from parameter: ', photos);
+    //const group_id = uuid.v1();
+    var group_id = uuid.v1();
+ 
     const cover = photos[0].uri;
     this.setState({
       group_id: group_id,
@@ -246,6 +244,37 @@ _deleteGroup = () => {
       //uploaded: false,
     });
 
+        // Add new photo group to Firestore. 
+        const db = firebase.firestore();
+        var new_photo_group_ref = db.collection('users').doc(global.email).collection('photo_groups').doc();
+        //.then(function(docRef){
+        //  console.log('Document written with ID: ', docRef.id);
+      //})
+      //.catch(function(error){
+      //    console.error('Error adding document: ', error);
+      //});
+        group_id = new_photo_group_ref.id;
+
+        var new_group_cover_photo_ref = new_photo_group_ref.collection('photos').doc();
+        /*.then(function(docRef){
+          console.log('Document written with ID: ', docRef.id);
+      })
+      .catch(function(error){
+          console.error('Error adding document: ', error);
+      });*/
+        var cover_id = new_group_cover_photo_ref.id;
+
+        new_photo_group_ref.set({
+          user: global.email,
+          cover: new_group_cover_photo_ref.id,          
+
+        })                     
+        .then(function(docRef){
+            console.log('Document written with ID: ', docRef.id);
+        })
+        .catch(function(error){
+            console.error('Error adding document: ', error);
+        });
     
     let group = {
       id: group_id,
@@ -261,7 +290,7 @@ _deleteGroup = () => {
     //StoreData('groups', global.groups);
     //AsyncStorage.mergeItem('groups', JSON.stringify(group));
     var all_groups = [];
-    RetrieveData('groups').then((result) => {
+    /* RetrieveData('groups').then((result) => {
       //console.log('get groups result in saveNewGroup', result);
   
       if (result ){
@@ -287,11 +316,11 @@ _deleteGroup = () => {
   })
   .catch((error) => {
       console.log('Error when retrieveData in removeGroups function: ', error);
-    })     
+    })     */
+    
 
-
-
-    this.cloud_upload_group(group_id, photos, cover, global.email);
+    //this.cloud_upload_group(group_id, photos, cover, global.email);
+    cloud_upload_photo_group(group_id, photos, cover, cover_id, email);
   } 
 
 
