@@ -91,7 +91,7 @@ class DisplayPhotoScreen extends Component{
 
     const { navigation } = this.props;
     let photo = navigation.getParam('photo', []);  
-    //console.log('In DisplayPhotoScreen, photo from navigation: ', photo);
+    console.log('>>>>>>>>> In DisplayPhotoScreen, photo from navigation: ', photo);
     const cover = navigation.getParam('cover', 0);
     const group_id = navigation.getParam('group_id', 0);
 

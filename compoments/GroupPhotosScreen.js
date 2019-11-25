@@ -39,7 +39,7 @@ class GroupPhotosScreen extends Component {
   }
 
   state = {
-    //photos: [],
+    photos: [],
     cover: 0,
     group_id: 0,
     //uploaded: false,
@@ -125,11 +125,12 @@ class GroupPhotosScreen extends Component {
        this.updateGroup();
      }
      else{
-       if ( photos.length > 0 ){
+       /*if ( photos.length > 0 ){
          console.log('setState photos');
         //this.setState({photos: photos});
         global.photos = photos;
-       }       
+       }       */
+       this.fetch_photos_from_cloud(global.email, group_id);
      }
 
      if (group_id == 0){
@@ -142,6 +143,36 @@ class GroupPhotosScreen extends Component {
          this.setState({'cover': cover});
        }
      }
+  }
+
+  fetch_photos_from_cloud = (email, group_id) => {
+    console.log('Fetching photos from cloud...');
+    var storage = firebase.storage();    
+    const db = firebase.firestore();
+    let self = this;
+    db.collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').get().then(function(querySnapshot){
+        querySnapshot.forEach(function(doc){
+            console.log(doc.id, ' => ', doc.data());            
+            
+            var ref = storage.ref().child('CurationTrainer/' + email + '/' + group_id + '/' + doc.id);
+            ref.getDownloadURL().then(function(url){
+                console.log('photo_url', url);
+                photo_url = url;
+                let photo = {
+                    id: doc.id,                    
+                    uri: photo_url,                    
+                    user: email
+                  }
+                global.photos.unshift(photo);
+                
+                self.setState({ photos: global.photos, });
+            })
+           
+        })
+        //console.log('1.global.groups: ', global.groups);
+
+    })
+    
   }
 
   componentWillMount(){
@@ -416,13 +447,14 @@ _deleteGroup = () => {
     //this.setGlobalState();
 
     //console.log('global photos: ', global.photos);
+    let photos = this.state.photos; 
     return (
       <View style={styles.container} >
              
         <View style={{flex:0.9}} >
               <ScrollView >
                   <View style={styles.imageGrid}>
-                      {global.photos.map((p,i) => {
+                      {photos.map((p,i) => {
                         
                           return (
                             
