@@ -130,7 +130,9 @@ class GroupPhotosScreen extends Component {
         //this.setState({photos: photos});
         global.photos = photos;
        }       */
-       this.fetch_photos_from_cloud(global.email, group_id);
+       if (group_id){
+        this.fetch_photos_from_cloud(global.email, group_id);
+       }       
      }
 
      if (group_id == 0){
@@ -150,6 +152,7 @@ class GroupPhotosScreen extends Component {
     var storage = firebase.storage();    
     const db = firebase.firestore();
     let self = this;
+    let photos = [];
     db.collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').get().then(function(querySnapshot){
         querySnapshot.forEach(function(doc){
             console.log(doc.id, ' => ', doc.data());            
@@ -161,11 +164,14 @@ class GroupPhotosScreen extends Component {
                 let photo = {
                     id: doc.id,                    
                     uri: photo_url,                    
-                    user: email
+                    user: email,
+                    width: doc.data().width,
+                    height: doc.data().height,
                   }
-                global.photos.unshift(photo);
+                //global.photos.unshift(photo);
+                photos.unshift(photo);
                 
-                self.setState({ photos: global.photos, });
+                self.setState({ photos: photos, });
             })
            
         })
@@ -284,10 +290,13 @@ _deleteGroup = () => {
 
     /* Upload cover photo and save it to Firestore */
     const cover_photo = photos[0];
-    cloud_upload_photo(cover_photo, group_id, cover_id, email);
+    let cover_size = cloud_upload_photo(cover_photo, group_id, cover_id, email);
+    console.log('cover_size: ', cover_size);
     new_group_cover_photo_ref.set({
       user: email,
-      group_id: group_id,      
+      group_id: group_id,   
+      width: cover_size[0],
+      height: cover_size[1],
     })
     .then(function(){
       console.log('New Cover photo added. ID: ', cover_id);
@@ -303,10 +312,15 @@ _deleteGroup = () => {
     for (i=1; i<photos.length; i++){
       var photo_ref = new_photo_group_ref.collection('photos').doc();
       photo_id = photo_ref.id;
+
+      let p = photos[i];
+      let photo_size = cloud_upload_photo(p, group_id, photo_id, email); 
         
         photo_ref.set({
         user: email,
         group_id: group_id,
+        width: photo_size[0],
+        height: photo_size[1],
       })
       .then(function(docRef){
         console.log('Photo document written with ID: ', photo_id);
@@ -316,8 +330,7 @@ _deleteGroup = () => {
       .catch(function(error){
         console.error('Error adding photo to Firestore and Storage: ', error);
       })
-      let p = photos[i];
-      cloud_upload_photo(p, group_id, photo_id, email);    
+         
       
     }
   }
@@ -464,6 +477,7 @@ _deleteGroup = () => {
                                   cover: this.state.cover,
                                   group_id: this.state.group_id,
                                   index: i,
+                                  photos: photos,
 
                                 });
                                 }} >

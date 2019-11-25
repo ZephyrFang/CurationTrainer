@@ -46,7 +46,7 @@ class DisplayPhotoScreen extends Component{
   state = {
     group_id: 0,
     cover: 0,
-    //photos: [],
+    photos: [],
     photo: null,
     //photo_id: 0,
     is_cover: false,
@@ -56,6 +56,7 @@ class DisplayPhotoScreen extends Component{
     max_h: 200,
     //index: 0,
     //p_i: 0,
+    
 
   }
 
@@ -102,6 +103,8 @@ class DisplayPhotoScreen extends Component{
 
     const index = navigation.getParam('index', 0);
 
+    let photos = navigation.getParam('photos', [])
+
     this.setState({
       photo: photo,
       //photo_id: photo.id,
@@ -109,6 +112,7 @@ class DisplayPhotoScreen extends Component{
       group_id: group_id,
       is_cover: is_cover,
       index: index,
+      photos: photos,
     });
     this.props.navigation.setParams({'is_cover': is_cover});
 
@@ -318,7 +322,8 @@ class DisplayPhotoScreen extends Component{
   }
 
   PhotoSwiped = (e, state) => {
-    var photo = global.photos[state.index];
+    //var photo = global.photos[state.index];
+    var photo = this.state.photos[state.index];
     console.log('photo swiped, index: ', state.index);
     console.log('photo.uri: ', photo.uri);
     
@@ -459,6 +464,7 @@ class DisplayPhotoScreen extends Component{
   }*/
 
   render () {
+    console.log('photos in DisplayOnePhotoScreen render function: ', this.state.photos);
     return (
         <Swiper style={styles.wrapper}                
                 dotStyle={styles.dotStyle}
@@ -468,7 +474,7 @@ class DisplayPhotoScreen extends Component{
 
                 onMomentumScrollEnd={this.PhotoSwiped.bind(this)}
         >
-          {global.photos.map((photo, i) => {
+          {this.state.photos.map((photo, i) => {
             return (
               <View key={i} style={styles.container} >
 
@@ -485,6 +491,7 @@ class DisplayPhotoScreen extends Component{
                         maxHeight: this.state.max_h, maxWidth: this.state.max_w - 10, 
                         //width: this.state.p_w,                         
                         //height: this.state.p_h,
+                        
                         width: photo.width,
                         height: photo.height,
                         //width: 200,

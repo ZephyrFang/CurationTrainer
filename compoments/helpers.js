@@ -129,7 +129,7 @@ export async function RetrieveData (id){
     }
   }
 
-  export async function cloud_upload_photo (photo, group_id, photo_id, email) {
+  export function cloud_upload_photo (photo, group_id, photo_id, email) {
     /* Upload one photo to Cloud (Firebase Storage) */
 
     console.log('>>>>>In cloud_upload_photo function.<<<<');    
@@ -137,11 +137,23 @@ export async function RetrieveData (id){
 
     /* Resize the photo --> the short side is 1024 and presever aspect ratio */
     let size;
-    if (photo.width < photo.length){
+    let p_w;
+    let p_h;
+    console.log('photo.width: ', photo.width);
+    console.log('photo.height: ', photo.height);
+    
+    if (photo.width < photo.height){
       size = { width: 1024};
+      p_w = 1024;
+      p_h = p_w * photo.height / photo.width;
+
+      console.log('p_w < p_h, p_w: ', p_w, ', p_h: ', p_h);
     }
     else{
       size = { height: 1024};
+      p_h = 1024;
+      p_w = p_h * photo.width / photo.height;
+      console.log('p_w >= p_h, p_w: ', p_w, ', p_h: ', p_h);
     }
 
     ImageManipulator.manipulateAsync(
@@ -182,6 +194,8 @@ export async function RetrieveData (id){
         console.log('err when resize photo. ', err);
       });
 
+      console.log('before return p_w: ', p_w, ', p_h: ', p_h);
+      return [p_w, p_h]
   }
 
   export async function cloud_upload_photo_0 (photo, group_id, is_cover, email) {
