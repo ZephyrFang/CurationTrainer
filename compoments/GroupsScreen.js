@@ -76,14 +76,51 @@ class GroupsScreen extends Component {
         this.getGroups();        
     }
 
+    fetch_groups_from_cloud = async (email) => {
+        console.log('Fetching groups from cloud...');
+        var storage = firebase.storage();
+        let groups = [];
+        const db = firebase.firestore();
+        let self = this;
+        db.collection('users').doc(email).collection('photo_groups').get().then(function(querySnapshot){
+            querySnapshot.forEach(function(doc){
+                console.log(doc.id, ' => ', doc.data());
+                let cover_id = doc.data().cover;
+                console.log('cover_id: ', cover_id);
+                
+                var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + doc.id + '/' + cover_id);
+                ref.getDownloadURL().then(function(url){
+                    console.log('cover_url', url);
+                    cover_url = url;
+                    let group = {
+                        id: doc.id,                    
+                        cover: cover_url,
+                        //uploaded: false,
+                        user: email
+                      }
+                    global.groups.unshift(group);
+                    
+                    self.setState({ groups: global.groups, });
+                })
+               
+            })
+            //console.log('1.global.groups: ', global.groups);
+
+        })
+        
+      }
+
     getGroups = () => {
         /* Get groups from Device or Global.groups and set State.groups */
 
         let groups = [];
         let groupsCopy;
         if (global.groups.length == 0){
+            this.fetch_groups_from_cloud(global.email);
+            //console.log('2.global.groups: ', global.groups);
+
             /* Get groups from device. */
-            console.log('global.groups.length is 0');
+            /*console.log('global.groups.length is 0');
             RetrieveData('groups').then((result) => {
                 
                 if (result ){
@@ -107,7 +144,7 @@ class GroupsScreen extends Component {
             })  
             .catch((error) => {
                 console.log('Error in getGroups function in GroupsScreen: ', error);
-              })              
+              })*/              
         }
         else{
             /* Get groups from global.groups. */
@@ -234,7 +271,7 @@ class GroupsScreen extends Component {
                                         </TouchableHighlight>
                                     </View>
                                     <View style={styles.cardContent}>
-                                      <Text style={styles.count}>({item.photos.length})</Text>
+                                      <Text style={styles.count}>(2)</Text>
                                      
                                     </View>
                                

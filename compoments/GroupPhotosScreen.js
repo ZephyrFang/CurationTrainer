@@ -230,6 +230,68 @@ _deleteGroup = () => {
   }
 
   saveNewGroup = (photos) => {
+    /* Save new photo group to Firebase ( Firestore and Storage ) */
+    
+    const db = firebase.firestore();
+    var new_photo_group_ref = db.collection('users').doc(global.email).collection('photo_groups').doc();    
+    var new_group_cover_photo_ref = new_photo_group_ref.collection('photos').doc();
+
+    const group_id = new_photo_group_ref.id;
+    const cover_id = new_group_cover_photo_ref.id;
+
+    new_photo_group_ref.set({
+      user: global.email,
+      cover: cover_id,          
+
+    })                     
+    .then(function(){
+        console.log('New group written with ID: ', group_id);
+    })
+    .catch(function(error){
+        console.error('Error adding group: ', error);
+    });
+
+    /* Upload cover photo and save it to Firestore */
+    const cover_photo = photos[0];
+    cloud_upload_photo(cover_photo, group_id, cover_id, email);
+    new_group_cover_photo_ref.set({
+      user: email,
+      group_id: group_id,      
+    })
+    .then(function(){
+      console.log('New Cover photo added. ID: ', cover_id);
+    })
+    .catch(function(error){
+      console.log('Error adding cover photo: ', error);
+    })
+
+
+    /* Upload other photos to Firebase Storage and save them to Firestore */
+    var i;
+    var photo_id;
+    for (i=1; i<photos.length; i++){
+      var photo_ref = new_photo_group_ref.collection('photos').doc();
+      photo_id = photo_ref.id;
+        
+        photo_ref.set({
+        user: email,
+        group_id: group_id,
+      })
+      .then(function(docRef){
+        console.log('Photo document written with ID: ', photo_id);
+        //photo_id = docRef.id;
+        
+      })
+      .catch(function(error){
+        console.error('Error adding photo to Firestore and Storage: ', error);
+      })
+      let p = photos[i];
+      cloud_upload_photo(p, group_id, photo_id, email);    
+      
+    }
+  }
+
+  saveNewGroup0 = (photos) => {
     /* Save new group to the device and cloud */
 
     console.log(' *** In GroupPhotosScreen saveNewGroup method.*********');    

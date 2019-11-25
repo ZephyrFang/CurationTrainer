@@ -88,6 +88,8 @@ export async function RetrieveData (id){
     }
   }
 
+
+
   export function cloud_upload_photo_group(group_id, photos, cover, cover_id, email){
 
     var photo_id;
@@ -166,13 +168,7 @@ export async function RetrieveData (id){
                                   ref.put(blobed_result)
                                           .then((res) => {
                                                 //console.log('Success: ', res);
-                                                console.log('Success');
-
-                                                const dbh = firebase.firestore();
-                                                dbh.collection('users/photo_groups/photos').add({
-                                                  uri: 'CurationTrainer/' + email + '/' + group_id + '/' + photo_name,
-
-                                                });
+                                                console.log('Success');                                               
                                                 
                                                 })
                                           .catch((error) => {                                       
@@ -302,6 +298,8 @@ export async function RetrieveData (id){
       return false;
     }) */ 
   }
+
+  
 
   export const AsyncAlert = async () => new Promise((resolve) => {
     Alert.alert(
