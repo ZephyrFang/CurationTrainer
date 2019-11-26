@@ -5,6 +5,8 @@ global.groups = [];
 global.email = '';
 global.userId = 0;
 
+global.target_size = 1024;
+
 /*module.exports = {
     screen1State: null,
 };*/
