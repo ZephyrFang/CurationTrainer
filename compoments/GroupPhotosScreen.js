@@ -53,7 +53,7 @@ class GroupPhotosScreen extends Component {
     for (i=0; i < photos.length; i++){
       photo = photos[i];
       var new_photo_ref = group_ref.collection('photos').doc();
-      cloud_upload_photo(photo, group_id, new_photo_ref.id, email, global.target_size);
+      
 
       const photo_size = get_photo_size(photo, global.target_size);      
       const timestamp = firebase.firestore.FieldValue.serverTimestamp();
@@ -65,8 +65,27 @@ class GroupPhotosScreen extends Component {
         addedAt: timestamp,
       })
       .then(function(){
-        console.log('New photo added to Group. ID: ', new_photo_ref.id);
+        const new_photo_id = new_photo_ref.id;
+        console.log('New photo added to Group. ID: ', new_photo_id);
+        
         //self.fetch_photos_from_cloud(email, group_id);
+        cloud_upload_photo(photo, group_id, new_photo_id, email, global.target_size).then(function(){
+          var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + new_photo_id);
+          ref.getDownloadURL().then(function(url){
+            photo_url = url;
+            let p = {
+              id : new_photo_id,
+              uri: photo_url,
+              user: email,
+              width: photo_size[0],
+              height: photo_size[1], 
+            }
+            let ps = self.state.photos;
+            ps.unshift(p);
+            self.setState({photos, ps});
+          })
+
+        })
       })
       .catch(function(error){
         console.log('Error adding cover photo: ', error);
@@ -164,7 +183,7 @@ class GroupPhotosScreen extends Component {
     const db = firebase.firestore();
     let self = this;
     let photos = [];
-    db.collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').orderBy('addedAt').get().then(function(querySnapshot){
+    db.collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').orderBy('addedAt').onSnapshot().then(function(querySnapshot){
         querySnapshot.forEach(function(doc){
             console.log(doc.id, ' => ', doc.data());            
             
@@ -279,7 +298,8 @@ _deleteGroup = () => {
 
   saveNewGroup = (photos) => {
     /* Save new photo group to Firebase ( Firestore and Storage ) */
-    
+    console.log('In saveNewGroup function');
+
     const db = firebase.firestore();
     var new_photo_group_ref = db.collection('users').doc(global.email).collection('photo_groups').doc();    
     var new_group_cover_photo_ref = new_photo_group_ref.collection('photos').doc();
@@ -302,7 +322,7 @@ _deleteGroup = () => {
     /* Upload cover photo and save it to Firestore */
     const cover_photo = photos[0];
     let cover_size = get_photo_size(cover_photo, global.target_size);
-    cloud_upload_photo(cover_photo, group_id, cover_id, email, global.target_size);
+
     console.log('cover_size: ', cover_size);
     const cover_timestamp = firebase.firestore.FieldValue.serverTimestamp();
     new_group_cover_photo_ref.set({
@@ -314,6 +334,20 @@ _deleteGroup = () => {
     })
     .then(function(){
       console.log('New Cover photo added. ID: ', cover_id);
+      let promise = cloud_upload_photo(cover_photo, group_id, cover_id, email, global.target_size);
+      promise.then(function(){
+        console.log('In cloud_upload_photo .then function.');
+        console.log('promise: ', promise);
+
+        var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + cover_id);
+        ref.getDownloadURL().then(function(url){
+          this.setState({
+            group_id: group_id,
+            cover: url,
+          });
+        })
+    
+      })
     })
     .catch(function(error){
       console.log('Error adding cover photo: ', error);
@@ -327,7 +361,7 @@ _deleteGroup = () => {
       var photo_ref = new_photo_group_ref.collection('photos').doc();
       photo_id = photo_ref.id;
       let p = photos[i];
-      cloud_upload_photo(p, group_id, photo_id, email, global.target_size); 
+      
 
       let photo_size = get_photo_size(p, global.target_size);
       const timestamp = firebase.firestore.FieldValue.serverTimestamp();      
@@ -342,6 +376,7 @@ _deleteGroup = () => {
       .then(function(docRef){
         console.log('Photo document written with ID: ', photo_id);
         //photo_id = docRef.id;
+        cloud_upload_photo(p, group_id, photo_id, email, global.target_size); 
         
       })
       .catch(function(error){

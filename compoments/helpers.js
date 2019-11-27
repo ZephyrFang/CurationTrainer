@@ -7,6 +7,7 @@ import '@firebase/firestore';
 import * as ImageManipulator from 'expo-image-manipulator';
 
 
+
 export async function RetrieveData (id){
 
     try {
@@ -152,8 +153,87 @@ export async function RetrieveData (id){
     console.log('before return p_w: ', p_w, ', p_h: ', p_h);
     return [p_w, p_h]
   }
+  export function cloud_upload_photo(photo, group_id, photo_id, email, target_size) {
+    /* Upload one photo to Cloud (Firebase Storage) */
 
-  export function cloud_upload_photo (photo, group_id, photo_id, email, target_size) {
+    console.log('>>>>>In cloud_upload_photo function.<<<<');    
+    //alert('In cloud_upload_photo, email is: ' + email);
+
+    /* Resize the photo --> the short side is 1024 and presever aspect ratio */
+    let size;    
+    
+    if (photo.width < photo.height){
+      size = { width: target_size};
+      
+    }
+    else{
+      size = { height: target_size};     
+    }
+
+    ImageManipulator.manipulateAsync(photo.uri, [{resize: size}], {compress:0.7, format: 'jpeg'})
+    .then(function(resized_result) {
+      console.log('Resize photo success!!!!, resized_result.uri: ', resized_result.uri);
+      return fetch(resized_result.uri);
+    })
+    .then(function(fetched_result) {
+      return fetched_result.blob();
+    })
+    .then(function(blobed_result) {
+     var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_id);
+     return ref.put(blobed_result);
+    })
+    .then(function(final_result) {
+      console.log('final_result Success');
+      
+      //return final_result;
+      return new Promise(() =>{
+        console.log('new promise returned');
+      });
+    })
+    .catch((error) => {
+      console.log('Error in upload photo to cloud promise chain: ', error);
+    })
+ }
+
+  export async function cloud_upload_photo_2(photo, group_id, photo_id, email, target_size) {
+     /* Upload one photo to Cloud (Firebase Storage) */
+
+     console.log('>>>>>In cloud_upload_photo function.<<<<');    
+     //alert('In cloud_upload_photo, email is: ' + email);
+ 
+     /* Resize the photo --> the short side is 1024 and presever aspect ratio */
+     let size;    
+     
+     if (photo.width < photo.height){
+       size = { width: target_size};
+       
+     }
+     else{
+       size = { height: target_size};     
+     }
+
+     ImageManipulator.manipulateAsync(photo.uri, [{resize: size}], {compress:0.7, format: 'jpeg'})
+     .then(resized_result => {
+       console.log('Resize photo success!!!!, resized_result.uri: ', resized_result.uri);
+       fetch(resized_result.uri);
+     })
+     .then(fetched_result => {
+       fetched_result.blob();
+     })
+     .then(blobed_result => {
+      var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_id);
+      ref.put(blobed_result);
+     })
+     .then(final_result => {
+       console.log('final_result Success');
+     })
+     .catch((error) => {
+       console.log('Error in upload photo to cloud promise chain: ', error);
+     })
+
+  }
+
+  export async function cloud_upload_photo_1 (photo, group_id, photo_id, email, target_size) {
     /* Upload one photo to Cloud (Firebase Storage) */
 
     console.log('>>>>>In cloud_upload_photo function.<<<<');    
@@ -194,7 +274,8 @@ export async function RetrieveData (id){
                                   ref.put(blobed_result)
                                           .then((res) => {
                                                 //console.log('Success: ', res);
-                                                console.log('Success');                                               
+                                                console.log('Success');    
+                                                //return res;                                           
                                                 
                                                 })
                                           .catch((error) => {                                       
