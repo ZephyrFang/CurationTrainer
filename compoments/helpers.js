@@ -131,26 +131,27 @@ export async function RetrieveData (id){
   }
 
   export function get_photo_size(photo, target_size){
+    console.log('>>>>>In helpers.get_photo_size function.<<<<');  
     
     let p_w;
     let p_h;
-    console.log('photo.width: ', photo.width);
-    console.log('photo.height: ', photo.height);
+    //console.log('photo.width: ', photo.width);
+    //console.log('photo.height: ', photo.height);
     
     if (photo.width < photo.height){
       
       p_w = target_size;
       p_h = p_w * photo.height / photo.width;
 
-      console.log('p_w < p_h, p_w: ', p_w, ', p_h: ', p_h);
+      //console.log('p_w < p_h, p_w: ', p_w, ', p_h: ', p_h);
     }
     else{
       size = { height: target_size};
       p_h = target_size;
       p_w = p_h * photo.width / photo.height;
-      console.log('p_w >= p_h, p_w: ', p_w, ', p_h: ', p_h);
+      //console.log('p_w >= p_h, p_w: ', p_w, ', p_h: ', p_h);
     }
-    console.log('before return p_w: ', p_w, ', p_h: ', p_h);
+    //console.log('before return p_w: ', p_w, ', p_h: ', p_h);
     return [p_w, p_h]
   }
   export function cloud_upload_photo(photo, group_id, photo_id, email, target_size) {
@@ -160,7 +161,7 @@ export async function RetrieveData (id){
     //alert('In cloud_upload_photo, email is: ' + email);
 
     /* Resize the photo --> the short side is 1024 and presever aspect ratio */
-    let size;    
+    let size;        
     
     if (photo.width < photo.height){
       size = { width: target_size};
@@ -172,7 +173,7 @@ export async function RetrieveData (id){
 
     ImageManipulator.manipulateAsync(photo.uri, [{resize: size}], {compress:0.7, format: 'jpeg'})
     .then(function(resized_result) {
-      console.log('Resize photo success!!!!, resized_result.uri: ', resized_result.uri);
+      //console.log('Resize photo success!!!!, resized_result.uri: ', resized_result.uri);
       return fetch(resized_result.uri);
     })
     .then(function(fetched_result) {
@@ -182,8 +183,23 @@ export async function RetrieveData (id){
      var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_id);
      return ref.put(blobed_result);
     })
+    .then(function(uploaded_result){
+      let photo_ref = firebase.firestore().collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').doc(photo_id);
+      return photo_ref.update({ uploaded: true }) 
+      /*let photo_size = get_photo_size(photo, target_size);
+      const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+      return photo_ref.set({
+        user: email,
+        group_id: group_id,
+        width: photo_size[0],
+        height: photo_size[1],
+        addedAt: timestamp,
+        local_uri: photo.uri,       
+
+      })*/
+    })
     .then(function(final_result) {
-      console.log('final_result Success');
+      console.log('final_result Success');      
       
       //return final_result;
       return new Promise(() =>{

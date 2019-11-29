@@ -73,35 +73,58 @@ class GroupsScreen extends Component {
             user_email: global.email,
         });
         
-        this.getGroups();        
+        //this.getGroups();       
+        this.fetch_groups_from_cloud(global.email); 
     }
 
     fetch_groups_from_cloud = async (email) => {
-        console.log('Fetching groups from cloud...');
+        console.log('***** In Fetching groups from cloud function **** ');
         var storage = firebase.storage();
-        let groups = [];
+        global.groups = [];
+        this.setState({ groups: global.groups });
         const db = firebase.firestore();
         let self = this;
-        db.collection('users').doc(email).collection('photo_groups').get().then(function(querySnapshot){
+        db.collection('users').doc(email).collection('photo_groups').orderBy('addedAt', 'desc').onSnapshot(function(querySnapshot){
+            console.log('*** Get snap shot of photo groups *** ');
             querySnapshot.forEach(function(doc){
-                console.log(doc.id, ' => ', doc.data());
+                console.log('*** foreEach snap shot of photo groups *** ');
+                //console.log(doc.id, ' => ', doc.data());
                 let cover_id = doc.data().cover;
                 console.log('cover_id: ', cover_id);
+                //let cover_ref = doc.collection('photos').doc(cover_id);
+                let cover_ref = db.collection('users').doc(email).collection('photo_groups').doc(doc.id).collection('photos').doc(cover_id);
                 
-                var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + doc.id + '/' + cover_id);
-                ref.getDownloadURL().then(function(url){
-                    console.log('cover_url', url);
-                    cover_url = url;
-                    let group = {
-                        id: doc.id,                    
-                        cover: cover_url,
-                        //uploaded: false,
-                        user: email
-                      }
-                    global.groups.unshift(group);
-                    
-                    self.setState({ groups: global.groups, });
+                cover_ref.get().then(function(cover){
+
+                    if (cover.data().uploaded){
+                        var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + doc.id + '/' + cover_id);
+                        ref.getDownloadURL().then(function(url){
+                            console.log('cover_url', url);
+                            cover_url = url;
+                            let group = {
+                                id: doc.id,                    
+                                cover: cover_url,
+                                //uploaded: false,
+                                user: email,
+                                count: doc.data().count,
+                              }
+                            global.groups.unshift(group);
+                            
+                            self.setState({ groups: global.groups, });
+                        })
+                    }
+                    else{
+                        let group = {
+                            id: doc.id,
+                            cover: cover.data.local_uri,
+                            user: email,
+                            count: doc.data().count,
+                        }
+                        global.groups.unshift(group);
+                        self.setState({ groups: global.groups});
+                    }
                 })
+
                
             })
             //console.log('1.global.groups: ', global.groups);
@@ -116,11 +139,11 @@ class GroupsScreen extends Component {
         let groups = [];
         let groupsCopy;
         if (global.groups.length == 0){
-            this.fetch_groups_from_cloud(global.email);
+            
             //console.log('2.global.groups: ', global.groups);
 
             /* Get groups from device. */
-            /*console.log('global.groups.length is 0');
+            console.log('global.groups.length is 0');
             RetrieveData('groups').then((result) => {
                 
                 if (result ){
@@ -144,7 +167,7 @@ class GroupsScreen extends Component {
             })  
             .catch((error) => {
                 console.log('Error in getGroups function in GroupsScreen: ', error);
-              })*/              
+              })           
         }
         else{
             /* Get groups from global.groups. */
@@ -271,7 +294,7 @@ class GroupsScreen extends Component {
                                         </TouchableHighlight>
                                     </View>
                                     <View style={styles.cardContent}>
-                                      <Text style={styles.count}>(2)</Text>
+                                      <Text style={styles.count}>({item.count})</Text>
                                      
                                     </View>
                                

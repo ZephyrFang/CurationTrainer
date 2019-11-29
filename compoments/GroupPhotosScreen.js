@@ -161,51 +161,66 @@ class GroupPhotosScreen extends Component {
         global.photos = photos;
        }       */
        if (group_id){
+         console.log('***** In fetchData function, group_id is true, invoke fatch_photos_from_cloud function.******');
         this.fetch_photos_from_cloud(global.email, group_id);
-       }       
+       }     
+       else{
+        console.log('***** In fetchData function, group_id is false, invoke savNewGroup function.*******');
+         this.saveNewGroup(photos);         
+       }  
      }
 
-     if (group_id == 0){
-       // New Group
-       this.saveNewGroup(photos);
-     }
-     else{
+     if (group_id && cover ){        
        
-       if (cover != 0 ){
          this.setState({'cover': cover});
-       }
+       
      }
   }
 
-  fetch_photos_from_cloud = (email, group_id) => {
-    console.log('Fetching photos from cloud...');
+  fetch_photos_from_cloud = async (email, group_id) => {
+    console.log('........Fetching photos from cloud...');
     var storage = firebase.storage();    
     const db = firebase.firestore();
     let self = this;
     let photos = [];
-    db.collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').orderBy('addedAt').onSnapshot().then(function(querySnapshot){
+    db.collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').orderBy('addedAt').onSnapshot(function(querySnapshot){
+      console.log('...onSnapshopt of fetch_photos_from_cloud...');
         querySnapshot.forEach(function(doc){
-            console.log(doc.id, ' => ', doc.data());            
-            
-            var ref = storage.ref().child('CurationTrainer/' + email + '/' + group_id + '/' + doc.id);
-            ref.getDownloadURL().then(function(url){
-                console.log('photo_url', url);
-                photo_url = url;
-                let photo = {
-                    id: doc.id,                    
-                    uri: photo_url,                    
-                    user: email,
-                    width: doc.data().width,
-                    height: doc.data().height,
-                  }
-                //global.photos.unshift(photo);
-                photos.unshift(photo);
-                
-                self.setState({ photos: photos, });
-            })
-           
-        })
-        //console.log('1.global.groups: ', global.groups);
+            //console.log(doc.id, ' => ', doc.data());  
+            console.log('...forEach snapshot of fetch_photos_from_cloud...'); 
+            if (doc.data().uploaded){
+              var ref = storage.ref().child('CurationTrainer/' + email + '/' + group_id + '/' + doc.id);     
+              ref.getDownloadURL()
+              .then(function(url){
+                  console.log('photo_url', url);
+                  photo_url = url;
+                  let photo = {
+                      id: doc.id,                    
+                      uri: photo_url,                    
+                      user: email,
+                      width: doc.data().width,
+                      height: doc.data().height,
+                    }
+                  //global.photos.unshift(photo);
+                  photos.unshift(photo);                
+                  self.setState({ photos: photos, });
+              })
+              .catch(function(error){
+                console.error('Error in fetch_photos_from_cloud function: ', error);
+              })
+            } 
+            else{
+              let photo = {
+                id: doc.id,
+                uri: doc.data().local_uri,
+                user: email,
+                width: doc.data().width,
+                heigth: doc.data().height,
+              }
+              photos.unshift(photo);
+              self.setState({photos: photos});
+            }           
+        })      
 
     })
     
@@ -298,93 +313,66 @@ _deleteGroup = () => {
 
   saveNewGroup = (photos) => {
     /* Save new photo group to Firebase ( Firestore and Storage ) */
-    console.log('In saveNewGroup function');
+    console.log('****** In saveNewGroup function ******');
 
     const db = firebase.firestore();
+
+    /* Add new group to firestore */
     var new_photo_group_ref = db.collection('users').doc(global.email).collection('photo_groups').doc();    
-    var new_group_cover_photo_ref = new_photo_group_ref.collection('photos').doc();
+    var cover_ref = new_photo_group_ref.collection('photos').doc();
 
     const group_id = new_photo_group_ref.id;
-    const cover_id = new_group_cover_photo_ref.id;
+    const cover_id = cover_ref.id;
+    const group_timestamp = firebase.firestore.FieldValue.serverTimestamp();
 
     new_photo_group_ref.set({
       user: global.email,
-      cover: cover_id,          
+      cover: cover_id,
+      cover_local_uri: photos[0].uri,
+      count: photos.length,     
+      addedAt: group_timestamp,  
 
     })                     
     .then(function(){
-        console.log('New group written with ID: ', group_id);
+        //console.log('New group written with ID: ', group_id);
     })
     .catch(function(error){
         console.error('Error adding group: ', error);
-    });
+    });   
 
-    /* Upload cover photo and save it to Firestore */
-    const cover_photo = photos[0];
-    let cover_size = get_photo_size(cover_photo, global.target_size);
-
-    console.log('cover_size: ', cover_size);
-    const cover_timestamp = firebase.firestore.FieldValue.serverTimestamp();
-    new_group_cover_photo_ref.set({
-      user: email,
-      group_id: group_id,   
-      width: cover_size[0],
-      height: cover_size[1],
-      addedAt: cover_timestamp,
-    })
-    .then(function(){
-      console.log('New Cover photo added. ID: ', cover_id);
-      let promise = cloud_upload_photo(cover_photo, group_id, cover_id, email, global.target_size);
-      promise.then(function(){
-        console.log('In cloud_upload_photo .then function.');
-        console.log('promise: ', promise);
-
-        var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + cover_id);
-        ref.getDownloadURL().then(function(url){
-          this.setState({
-            group_id: group_id,
-            cover: url,
-          });
-        })
-    
-      })
-    })
-    .catch(function(error){
-      console.log('Error adding cover photo: ', error);
-    })
-
-
-    /* Upload other photos to Firebase Storage and save them to Firestore */
+    /* Add photos documents to Firestore and upload photos to Firebase Storage */
     var i;
     var photo_id;
-    for (i=1; i<photos.length; i++){
-      var photo_ref = new_photo_group_ref.collection('photos').doc();
-      photo_id = photo_ref.id;
+    var photo_ref;
+    for (i=0; i<photos.length; i++){
       let p = photos[i];
-      
+      const local_uri = photos[i].uri;
+      if ( i == 0){        
+        photo_ref = cover_ref;
+  
 
-      let photo_size = get_photo_size(p, global.target_size);
-      const timestamp = firebase.firestore.FieldValue.serverTimestamp();      
-        
-        photo_ref.set({
-        user: email,
-        group_id: group_id,
-        width: photo_size[0],
-        height: photo_size[1],
-        addedAt: timestamp,
-      })
-      .then(function(docRef){
-        console.log('Photo document written with ID: ', photo_id);
-        //photo_id = docRef.id;
-        cloud_upload_photo(p, group_id, photo_id, email, global.target_size); 
-        
-      })
-      .catch(function(error){
-        console.error('Error adding photo to Firestore and Storage: ', error);
-      })
-         
+      }
+      else{
+        photo_ref = new_photo_group_ref.collection('photos').doc();        
+      }
       
-    }
+      photo_id = photo_ref.id;
+      let photo_size = get_photo_size(p, global.target_size);
+      const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+      
+        console.log('photo uploaded. i: ', i, ' photo_id: ', photo_id);
+        photo_ref.set({
+          user: email,
+          group_id: group_id,
+          width: photo_size[0],
+          height: photo_size[1],
+          addedAt: timestamp,
+          local_uri: local_uri,
+          uploaded: false,
+        }) 
+        
+        cloud_upload_photo(p, group_id, photo_id, email, global.target_size);
+    } 
   }
 
   saveNewGroup0 = (photos) => {
@@ -508,7 +496,7 @@ _deleteGroup = () => {
 
   render() {
     
-    console.log('In GroupPhotosScreen render method.');
+    console.log('*** In GroupPhotosScreen render method.*** ');
     //this.setGlobalState();
 
     //console.log('global photos: ', global.photos);
