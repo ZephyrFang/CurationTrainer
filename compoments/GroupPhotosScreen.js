@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Image, ImageBackground, ScrollView, Text, Button, View, TouchableHighlight, TouchableOpacity, Alert, Platform, Dimensions } from 'react-native';
 import styles from './styles';
-import uuid from 'react-native-uuid';
+//import uuid from 'react-native-uuid';
 //import AsyncStorage from '@react-native-community/async-storage';
 import {AsyncStorage} from 'react-native';
 
@@ -48,6 +48,18 @@ class GroupPhotosScreen extends Component {
   cloud_add_photos = (group_id, photos, email) => {
     const db = firebase.firestore();
     var group_ref = db.collection('users').doc(email).collection('photo_groups').doc(group_id);
+    group_ref.get()
+    .then(function(doc){
+      if(doc.exists){
+        let count = doc.data().count;
+        count = count + photos.length;
+        group_ref.update({ count:count }); 
+      }
+    })
+    .catch(function(error){
+      console.log('Error in clound_add_photos: ', error);
+    })
+
     var i;
     let self = this;
     for (i=0; i < photos.length; i++){
@@ -65,31 +77,16 @@ class GroupPhotosScreen extends Component {
         addedAt: timestamp,
       })
       .then(function(){
-        const new_photo_id = new_photo_ref.id;
-        console.log('New photo added to Group. ID: ', new_photo_id);
+        
+        console.log('New photo added to Group. ID: ', new_photo_ref.id);
         
         //self.fetch_photos_from_cloud(email, group_id);
-        cloud_upload_photo(photo, group_id, new_photo_id, email, global.target_size).then(function(){
-          var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + new_photo_id);
-          ref.getDownloadURL().then(function(url){
-            photo_url = url;
-            let p = {
-              id : new_photo_id,
-              uri: photo_url,
-              user: email,
-              width: photo_size[0],
-              height: photo_size[1], 
-            }
-            let ps = self.state.photos;
-            ps.unshift(p);
-            self.setState({photos, ps});
-          })
-
-        })
+        
       })
       .catch(function(error){
-        console.log('Error adding cover photo: ', error);
+        console.log('Error adding photo: ', error);
       })
+      cloud_upload_photo(photo, group_id, new_photo_ref.id, email, global.target_size);
 
     }
   }
@@ -119,7 +116,7 @@ class GroupPhotosScreen extends Component {
   } 
 
   fetchData = () => {
-    console.log('In fetchData method.')
+    console.log('In GroupPhotosScreen fetchData method.')
 
     const { navigation } = this.props;
 
@@ -152,6 +149,8 @@ class GroupPhotosScreen extends Component {
        //his.setState({photos: ps });
        this.updateGroup();*/
        this.cloud_add_photos(group_id, photos, global.email);
+       global.photos.push(...photos);
+       this.setState({'photos': global.photos});
 
      }
      else{
@@ -178,7 +177,7 @@ class GroupPhotosScreen extends Component {
   }
 
   fetch_photos_from_cloud = async (email, group_id) => {
-    console.log('........Fetching photos from cloud...');
+    console.log('**** In GroupPhotosScreen fetch_photos_from_cloud function *****');
     var storage = firebase.storage();    
     const db = firebase.firestore();
     let self = this;
@@ -219,11 +218,10 @@ class GroupPhotosScreen extends Component {
               }
               photos.unshift(photo);
               self.setState({photos: photos});
+              global.photos = photos;
             }           
         })      
-
-    })
-    
+    })    
   }
 
   componentWillMount(){
@@ -324,6 +322,7 @@ _deleteGroup = () => {
     const group_id = new_photo_group_ref.id;
     const cover_id = cover_ref.id;
     const group_timestamp = firebase.firestore.FieldValue.serverTimestamp();
+    let self = this;
 
     new_photo_group_ref.set({
       user: global.email,
@@ -335,6 +334,19 @@ _deleteGroup = () => {
     })                     
     .then(function(){
         //console.log('New group written with ID: ', group_id);
+        self.setState({
+          group_id: group_id,
+          cover: photos[0].uri,
+          photos: photos
+        });
+
+        let group = {
+          id: group_id,
+          cover: photos[0].uri,
+          count: photos.length,          
+        }
+        //global.groups.unshift(group);
+        global.groups.splice(1, 0, group); 
     })
     .catch(function(error){
         console.error('Error adding group: ', error);
@@ -349,8 +361,6 @@ _deleteGroup = () => {
       const local_uri = photos[i].uri;
       if ( i == 0){        
         photo_ref = cover_ref;
-  
-
       }
       else{
         photo_ref = new_photo_group_ref.collection('photos').doc();        
@@ -370,8 +380,13 @@ _deleteGroup = () => {
           local_uri: local_uri,
           uploaded: false,
         }) 
+        .then(function(){
+          cloud_upload_photo(p, group_id, photo_id, email, global.target_size);
+        })
+        .catch(function(error){
+          console.log('Error adding photo: ', error);
+        })       
         
-        cloud_upload_photo(p, group_id, photo_id, email, global.target_size);
     } 
   }
 

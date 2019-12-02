@@ -58,6 +58,7 @@ class GroupsScreen extends Component {
             }
           });*/
 
+          this.getGroups();  
   
     }
 
@@ -73,14 +74,14 @@ class GroupsScreen extends Component {
             user_email: global.email,
         });
         
-        //this.getGroups();       
-        this.fetch_groups_from_cloud(global.email); 
+             
+        //this.fetch_groups_from_cloud(global.email); 
     }
 
     fetch_groups_from_cloud = async (email) => {
-        console.log('***** In Fetching groups from cloud function **** ');
-        var storage = firebase.storage();
-        global.groups = [];
+        console.log('***** In GroupsScreen fetch_groups_from_cloud function **** ');
+        //var storage = firebase.storage();
+        global.groups = ['New Groups', ];
         this.setState({ groups: global.groups });
         const db = firebase.firestore();
         let self = this;
@@ -90,7 +91,7 @@ class GroupsScreen extends Component {
                 console.log('*** foreEach snap shot of photo groups *** ');
                 //console.log(doc.id, ' => ', doc.data());
                 let cover_id = doc.data().cover;
-                console.log('cover_id: ', cover_id);
+                //console.log('cover_id: ', cover_id);
                 //let cover_ref = doc.collection('photos').doc(cover_id);
                 let cover_ref = db.collection('users').doc(email).collection('photo_groups').doc(doc.id).collection('photos').doc(cover_id);
                 
@@ -99,29 +100,33 @@ class GroupsScreen extends Component {
                     if (cover.data().uploaded){
                         var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + doc.id + '/' + cover_id);
                         ref.getDownloadURL().then(function(url){
-                            console.log('cover_url', url);
+                            //console.log('cover_url', url);
                             cover_url = url;
                             let group = {
                                 id: doc.id,                    
-                                cover: cover_url,
-                                //uploaded: false,
-                                user: email,
+                                cover: cover_url,                                
+                                //user: email,
                                 count: doc.data().count,
                               }
-                            global.groups.unshift(group);
-                            
+                            //global.groups.unshift(group);  
+                            global.groups.splice(1, 0, group);                          
                             self.setState({ groups: global.groups, });
+                            console.log('<<<<<< <<<<<<<<<<<<<<<<<<<<<<<<< group added into global and state.');
+                            console.log('after fetch, global.groups: ', global.groups);
+                            console.log('after fetch, self.state.groups: ', self.state.groups);
                         })
                     }
                     else{
                         let group = {
                             id: doc.id,
-                            cover: cover.data.local_uri,
+                            cover: cover.data().local_uri,
                             user: email,
                             count: doc.data().count,
                         }
-                        global.groups.unshift(group);
+                        //global.groups.unshift(group);    
+                        global.groups.splice(1, 0, group);                     
                         self.setState({ groups: global.groups});
+                        console.log('<<<<<< <<<<<<<<<<<<<<<<<<<<<<<<< group added into global and state, group cover using local uri.');
                     }
                 })
 
@@ -134,6 +139,20 @@ class GroupsScreen extends Component {
       }
 
     getGroups = () => {
+        /* Get groups from Cloud or Global.groups and set State.groups */
+       
+        /* Get groups from global.groups */            
+        console.log('In GroupsScreen getGroups function, global.groups.length is: ', global.groups.length);   
+        this.setState({ groups: global.groups });        
+
+        if (global.groups.length <= 1 ) {
+            /* Global.groups is empty, there is only a 'New Group' string in it. Get groups from Cloud */
+            console.log('fetching groups from cloud ...');
+            this.fetch_groups_from_cloud(global.email);            
+        }
+    }
+
+    getGroups0 = () => {
         /* Get groups from Device or Global.groups and set State.groups */
 
         let groups = [];
@@ -258,19 +277,22 @@ class GroupsScreen extends Component {
  
   
     render (){
-        console.log('In GroupsScreen render method. ')
+        
 
     /* Insert 'New Group' to the begin of the groups array to display Add Group icon in the Flatlist */
-    let groups = this.state.groups;    
-    let groupsCopy = [...groups];
-    groupsCopy.unshift("New Group");
+    //let groups = this.state.groups;    
+    //let groupsCopy = [...groups];
+    //groupsCopy.unshift("New Group");
+
+    console.log('***** In GroupsScreen render method. this.state.groups: ', this.state.groups);
+
  
      return(
       <View style={styles.albums_container}>                   
         
           <FlatList style={styles.list} 
                     contentContainerStyle={styles.listContainer}
-                    data={groupsCopy} 
+                    data={this.state.groups} 
                     horizontal={false} 
                     numColumns={2} 
                     keyExtractor={(item) => { return item.id; }}
