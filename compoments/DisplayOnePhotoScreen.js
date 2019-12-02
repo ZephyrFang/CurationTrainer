@@ -7,7 +7,7 @@ import ImageZoom from 'react-native-image-pan-zoom';
 
 //import * as GLOBAL from './global.js';
 //import  GLOBAL from './global.js';
-import { RetrieveData, StoreData, ConfirmAlert, cloud_delete_photo, cloud_upload_photo } from './helpers.js'
+import { RetrieveData, StoreData, ConfirmAlert, cloud_delete_photo, cloud_upload_photo, cloud_delete_group } from './helpers.js'
 
 
 
@@ -186,6 +186,9 @@ class DisplayPhotoScreen extends Component{
                   /* empty group should be deleted. */
                   groups.splice(g_index, 1);
                   empty_group = true;
+
+                  // new 
+                  cloud_delete_group(group_id, email);
                 }
                 else {
                   group.photos = photos;
@@ -203,11 +206,15 @@ class DisplayPhotoScreen extends Component{
 
                     /* Sync with Cloud */
                     is_cover = true;
-                    cloud_delete_photo(first_uri, group_id, false, email);
-                    cloud_upload_photo(first_photo, group_id, true, email);                                        
+                    //cloud_delete_photo(first_uri, group_id, false, email);
+                    //cloud_upload_photo(first_photo, group_id, true, email);                 
+
                   }
                   
                   groups[g_index] = group;
+
+                  // new
+                  cloud_delete_photo(this.state.photo.id, group_id, is_cover, email);
                 }       
                 
                 global.groups = groups;
@@ -215,7 +222,7 @@ class DisplayPhotoScreen extends Component{
 
                 /* Sync with Cloud */
                 //cloud_delete_photo(uri, group_id, is_cover, email); 
-                cloud_delete_photo(this.state.photo.id, group_id, is_cover, email);
+                
               }
             }  
       

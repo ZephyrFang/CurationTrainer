@@ -53,7 +53,7 @@ export async function RetrieveData (id){
   }
 
   export function cloud_delete_photo(photo_id, group_id, email, is_cover){
-    /* Delete photo from FireStore and Firebase Storage */
+    /* Delete photo from FireStore and Firebase Storage, group won't be empty after photo deleted. */
 
     /* Delete photo from Storage */
     var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_id);
@@ -76,15 +76,9 @@ export async function RetrieveData (id){
     .then(function(group_doc){
       // Update group photos count
       let count = group_doc.data().count;
-      count = count - 1;
-      if (count == 0){
-        group_ref.delete();
-        // If group photos count is 0, delete the group
-
-      }
-      else{
+      count = count - 1;     
         
-        if (is_cover){
+      if (is_cover){
           // deleted photo is cover, update group cover and count
           group_ref.collection('photos').orderBy('addedAt').limit(1).get()
           .then(function(photo_docs){
@@ -95,21 +89,17 @@ export async function RetrieveData (id){
             });
             
           })  
-        }
-        else {
+      }
+      else {
           // deleted photo is not cover, update group count only
           return group_ref.update({
             count: count,
           })
-        }
-      }
-      
-    })
-   
+      } 
+    })   
     .catch(function(error) {
       console.log('Error in helper.clound_delete_photo function, get and update group_ref: ', error);
-    })
-      
+    })      
     
 
     /* Delete photo from Firebase Storage */
@@ -140,24 +130,32 @@ export async function RetrieveData (id){
   }
 
   export function cloud_delete_group (group_id, photos, cover, email ) {
+    /* Delete photos in the group from Firestore and Firebase Storage. And Delete the group document from Firestore. */
     console.log('In cloud_delete_group function.');
+
+    /* Delete group document from Firestore */
+    var group_ref = firebase.firestore().collection('users').doc(email).collection('photo_groups').doc(group_id);
+    group_ref.delete();
 
     
     //let photos = global.photos;
     //const cover = this.state.cover;
     //const email = global.email;
  
+    /* Delete photos */
     var i;
     for ( i=0; i< photos.length; i++ ) {
       let p = photos[i];
       let is_cover = false;
-      if ( p.uri == cover ){
+      //if ( p.uri == cover ){
+      if ( p.id == cover ){
         is_cover = true;
       }
-      let result = cloud_delete_photo(p.uri, group_id, is_cover, email);
-      if ( !result ) {
-        return;
-      }
+      //let result = cloud_delete_photo(p.uri, group_id, is_cover, email);
+      //if ( !result ) {
+      //  return;
+      //}
+      cloud_delete_photo(p.id, group_id, email. is_cover);
     }
   }
 
