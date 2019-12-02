@@ -5,6 +5,7 @@ import '@firebase/firestore';
 //import Resizer from 'react-image-file-resizer';
 //import ImageResizer from 'react-native-image-resizer';
 import * as ImageManipulator from 'expo-image-manipulator';
+import GroupPhotosScreen from './GroupPhotosScreen';
 
 
 
@@ -51,7 +52,78 @@ export async function RetrieveData (id){
     return id;
   }
 
-  export async function cloud_delete_photo (uri, group_id, is_cover, email) {
+  export function cloud_delete_photo(photo_id, group_id, email, is_cover){
+    /* Delete photo from FireStore and Firebase Storage */
+
+    /* Delete photo from Storage */
+    var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_id);
+    ref.delete().then(() => {
+      console.log('photo deleted from cloud.');
+    })
+    .catch((error) => {
+      console.log('Error: ', error);
+    })    
+    
+    /* Delete photo from FireStore and update the group */
+    var group_ref = firebase.firestore().collection('users').doc(email).collection('photo_groups').doc(group_id);
+
+    group_ref.collection('photos').doc(photo_id).delete()
+    // Delete photo doc from Firestore
+
+    .then(function(){
+      return group_ref.get();
+    })    
+    .then(function(group_doc){
+      // Update group photos count
+      let count = group_doc.data().count;
+      count = count - 1;
+      if (count == 0){
+        group_ref.delete();
+        // If group photos count is 0, delete the group
+
+      }
+      else{
+        
+        if (is_cover){
+          // deleted photo is cover, update group cover and count
+          group_ref.collection('photos').orderBy('addedAt').limit(1).get()
+          .then(function(photo_docs){
+            let first_photo_id = photo_docs[0].id;
+            return group_ref.update({
+              count:count,
+              cover: first_photo_id,
+            });
+            
+          })  
+        }
+        else {
+          // deleted photo is not cover, update group count only
+          return group_ref.update({
+            count: count,
+          })
+        }
+      }
+      
+    })
+   
+    .catch(function(error) {
+      console.log('Error in helper.clound_delete_photo function, get and update group_ref: ', error);
+    })
+      
+    
+
+    /* Delete photo from Firebase Storage */
+    var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_name);
+    ref.delete().then(() => {
+      console.log('photo deleted from cloud.');
+    })
+    .catch((error) => {
+      console.log('Error: ', error);
+    })
+    
+  }
+
+  export async function cloud_delete_photo0 (uri, group_id, is_cover, email) {
     /* Delete one photo from Cloud (Firebase Storage) */
     
     var id = get_id_from_uri(uri);
@@ -88,8 +160,6 @@ export async function RetrieveData (id){
       }
     }
   }
-
-
 
   export function cloud_upload_photo_group(group_id, photos, cover, cover_id, email){
 

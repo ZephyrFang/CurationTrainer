@@ -92,8 +92,8 @@ class GroupPhotosScreen extends Component {
   }
 
  
-  cloud_upload_group = (group_id, photos, cover, email) => {
-    /* Upload photos in the group to Cloud (Firebase Storage) */
+  /* cloud_upload_group = (group_id, photos, cover, email) => {
+    // Upload photos in the group to Cloud (Firebase Storage) 
 
     console.log(' *** In uploadPhotos method.*********');
 
@@ -113,7 +113,7 @@ class GroupPhotosScreen extends Component {
         return;
       }
     }
-  } 
+  } */
 
   fetchData = () => {
     console.log('In GroupPhotosScreen fetchData method.')
@@ -136,58 +136,50 @@ class GroupPhotosScreen extends Component {
       });
 
      if (add_photos){
-       //var ps = this.state.photos;
-       
-       /*console.log('add_photos is true, global.photos.length before push: ', global.photos.length);
-       //ps.push(...photos);
-       global.photos.push(...photos);
-
-       // Upload added photos to cloud 
-       this.cloud_upload_group(group_id, photos, 0, global.email);
-
-       console.log('ps.length after push: ', global.photos.length);
-       //his.setState({photos: ps });
-       this.updateGroup();*/
+       /* Adding new photos to an existing group */
+      
        this.cloud_add_photos(group_id, photos, global.email);
        global.photos.push(...photos);
        this.setState({'photos': global.photos});
 
      }
      else{
-       /*if ( photos.length > 0 ){
-         console.log('setState photos');
-        //this.setState({photos: photos});
-        global.photos = photos;
-       }       */
+     
        if (group_id){
-         console.log('***** In fetchData function, group_id is true, invoke fatch_photos_from_cloud function.******');
+         /* Showing an existing group */
+         console.log('***** In GroupPhotosScreen fetchData function, group_id is true, invoke fatch_photos_from_cloud function.******');
         this.fetch_photos_from_cloud(global.email, group_id);
        }     
        else{
-        console.log('***** In fetchData function, group_id is false, invoke savNewGroup function.*******');
+         /* Creating a new group */
+        console.log('***** In GroupPhotosScreen fetchData function, group_id is false, invoke savNewGroup function.*******');
          this.saveNewGroup(photos);         
        }  
      }
 
      if (group_id && cover ){        
        
-         this.setState({'cover': cover});
-       
+         this.setState({'cover': cover});       
      }
   }
 
   fetch_photos_from_cloud = async (email, group_id) => {
+    /* Fetching photos of a given group from Firebase */
+
     console.log('**** In GroupPhotosScreen fetch_photos_from_cloud function *****');
     var storage = firebase.storage();    
     const db = firebase.firestore();
     let self = this;
     let photos = [];
+
+    /* Fetching photo documents from FireStore */
     db.collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').orderBy('addedAt').onSnapshot(function(querySnapshot){
       console.log('...onSnapshopt of fetch_photos_from_cloud...');
         querySnapshot.forEach(function(doc){
             //console.log(doc.id, ' => ', doc.data());  
             console.log('...forEach snapshot of fetch_photos_from_cloud...'); 
             if (doc.data().uploaded){
+              /* if the photo has uploaded to Fire Storage, assembly photo uri with url from Fire Storage */
               var ref = storage.ref().child('CurationTrainer/' + email + '/' + group_id + '/' + doc.id);     
               ref.getDownloadURL()
               .then(function(url){
@@ -203,12 +195,14 @@ class GroupPhotosScreen extends Component {
                   //global.photos.unshift(photo);
                   photos.unshift(photo);                
                   self.setState({ photos: photos, });
+                  global.photos = photos;
               })
               .catch(function(error){
                 console.error('Error in fetch_photos_from_cloud function: ', error);
               })
             } 
             else{
+              /* if the photo has not yet uploaded to Fire Storage, assembly photo uri with local uri ( assume the photo is in current device ) */
               let photo = {
                 id: doc.id,
                 uri: doc.data().local_uri,
@@ -260,7 +254,7 @@ _deleteGroup = () => {
           if (index > -1){
             groups.splice(index, 1);
             global.groups = groups;
-            StoreData('groups', groups);
+            //StoreData('groups', groups);
             cloud_delete_group( this.state.group_id, global.photos, this.state.cover, global.email );
             this.props.navigation.push('Groups');
       }           

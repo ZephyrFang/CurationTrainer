@@ -214,7 +214,8 @@ class DisplayPhotoScreen extends Component{
                 StoreData('groups', groups);
 
                 /* Sync with Cloud */
-                cloud_delete_photo(uri, group_id, is_cover, email); 
+                //cloud_delete_photo(uri, group_id, is_cover, email); 
+                cloud_delete_photo(this.state.photo.id, group_id, is_cover, email);
               }
             }  
       
