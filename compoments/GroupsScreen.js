@@ -99,9 +99,11 @@ class GroupsScreen extends Component {
 
                     if (cover.data().uploaded){
                         var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + doc.id + '/' + cover_id);
-                        ref.getDownloadURL().then(function(url){
+                        ref.getDownloadURL()
+                        .then(function(url){
+                            self._set_groups_state(doc.id, url, doc.data().count, self);
                             //console.log('cover_url', url);
-                            cover_url = url;
+                            /*cover_url = url;
                             let group = {
                                 id: doc.id,                    
                                 cover: cover_url,                                
@@ -113,30 +115,41 @@ class GroupsScreen extends Component {
                             self.setState({ groups: global.groups, });
                             console.log('<<<<<< <<<<<<<<<<<<<<<<<<<<<<<<< group added into global and state.');
                             console.log('after fetch, global.groups: ', global.groups);
-                            console.log('after fetch, self.state.groups: ', self.state.groups);
+                            console.log('after fetch, self.state.groups: ', self.state.groups);*/
                         })
                     }
                     else{
-                        let group = {
-                            id: doc.id,
-                            cover: cover.data().local_uri,
-                            user: email,
-                            count: doc.data().count,
-                        }
-                        //global.groups.unshift(group);    
-                        global.groups.splice(1, 0, group);                     
-                        self.setState({ groups: global.groups});
-                        console.log('<<<<<< <<<<<<<<<<<<<<<<<<<<<<<<< group added into global and state, group cover using local uri.');
+                        self._set_groups_state(doc.id, cover.data().local_uri, doc.data().count, self);
+                        
+                                
                     }
-                })
-
-               
+                })               
             })
             //console.log('1.global.groups: ', global.groups);
-
-        })
-        
+        })        
       }
+
+    _set_groups_state = (id, cover, count, self) => {
+        /* Check whether the group is already in global.groups. If not, add it in and setState. */
+
+        console.log('****** In GroupsScreen _set_groups_state function. ****** ');
+        let index = global.groups.findIndex(g => {
+            return g.id == id;
+        })
+        console.log('_set_groups_state, index: ', index);
+        if (index == -1){
+            let group = {
+                id: id,
+                cover: cover,
+                //user: email,
+                count: count,
+                }
+            //global.groups.unshift(group);    
+            global.groups.splice(1, 0, group);                     
+            self.setState({ groups: global.groups});
+            console.log('<<<<<< <<<<<<<<<<<<<<<<<<<<<<<<< group added into global and state, group cover using local uri.');
+        }  
+    }
 
     getGroups = () => {
         /* Get groups from Cloud or Global.groups and set State.groups */

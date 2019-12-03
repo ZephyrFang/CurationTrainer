@@ -103,7 +103,7 @@ export async function RetrieveData (id){
     
 
     /* Delete photo from Firebase Storage */
-    var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_name);
+    var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_id);
     ref.delete().then(() => {
       console.log('photo deleted from cloud.');
     })
@@ -129,7 +129,44 @@ export async function RetrieveData (id){
     })
   }
 
-  export function cloud_delete_group (group_id, photos, cover, email ) {
+  export function cloud_delete_group(group_id, email){
+    /* Delete photo group from firestore and storage */
+
+    let group_ref = firebase.firestore().collection('users').doc(email).collection('photo_groups').doc(group_id);
+    group_ref.collection('photos').get()
+    .then(function(querySnapshot) {
+      querySnapshot.forEach(function(doc) {
+        let photo_id = doc.id;
+
+        /* Dlete each photo document from firestore */
+        group_ref.collection('photos').doc(photo_id).delete()
+
+        .then(function(){
+        /* Delete each photo from firebase storage */
+        var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_id); 
+        return ref.delete();
+        })       
+
+        .then(() => {
+          console.log('photo deleted from cloud.');
+        })
+        .catch((error) => {
+          console.log('Error: ', error);
+        })
+          
+      });
+    })
+    
+    group_ref.delete().then(() => {
+      console.log('group deleted from cloud.');
+    })
+    .catch((error) => {
+      console.log('Delete group error: ', error);
+    }) 
+
+  }
+
+  export function cloud_delete_group0 (group_id, photos, cover, email ) {
     /* Delete photos in the group from Firestore and Firebase Storage. And Delete the group document from Firestore. */
     console.log('In cloud_delete_group function.');
 
@@ -253,18 +290,7 @@ export async function RetrieveData (id){
     })
     .then(function(uploaded_result){
       let photo_ref = firebase.firestore().collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').doc(photo_id);
-      return photo_ref.update({ uploaded: true }) 
-      /*let photo_size = get_photo_size(photo, target_size);
-      const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-      return photo_ref.set({
-        user: email,
-        group_id: group_id,
-        width: photo_size[0],
-        height: photo_size[1],
-        addedAt: timestamp,
-        local_uri: photo.uri,       
-
-      })*/
+      return photo_ref.update({ uploaded: true })   
     })
     .then(function(final_result) {
       console.log('final_result Success');      

@@ -46,6 +46,8 @@ class GroupPhotosScreen extends Component {
   }
 
   cloud_add_photos = (group_id, photos, email) => {
+    /* Add new photos to existing group */
+
     const db = firebase.firestore();
     var group_ref = db.collection('users').doc(email).collection('photo_groups').doc(group_id);
     group_ref.get()
@@ -90,31 +92,7 @@ class GroupPhotosScreen extends Component {
 
     }
   }
-
  
-  /* cloud_upload_group = (group_id, photos, cover, email) => {
-    // Upload photos in the group to Cloud (Firebase Storage) 
-
-    console.log(' *** In uploadPhotos method.*********');
-
-    //const group_id = this.state.group_id;
-    //let photos = global.photos;
-    //const cover = this.state.cover;
- 
-    var i;
-    for ( i=0; i< photos.length; i++ ) {
-      let p = photos[i];
-      let is_cover = false;
-      if ( p.uri == cover ){
-        is_cover = true;
-      }
-      let result = cloud_upload_photo(p, group_id, is_cover, email);
-      if ( !result ) {
-        return;
-      }
-    }
-  } */
-
   fetchData = () => {
     console.log('In GroupPhotosScreen fetchData method.')
 
@@ -139,11 +117,20 @@ class GroupPhotosScreen extends Component {
        /* Adding new photos to an existing group */
       
        this.cloud_add_photos(group_id, photos, global.email);
+       console.log('Adding(pushing) new photos to existing group');
        global.photos.push(...photos);
        this.setState({'photos': global.photos});
+       let index = global.groups.findIndex(g=>{
+         return g.id == group_id;
+       })
+       if (index>-1){
+         let group = global.groups[index];
+         group.count = global.photos.length;
+       }
 
      }
      else{
+       global.photos = [];
      
        if (group_id){
          /* Showing an existing group */
@@ -170,7 +157,7 @@ class GroupPhotosScreen extends Component {
     var storage = firebase.storage();    
     const db = firebase.firestore();
     let self = this;
-    let photos = [];
+    //let photos = [];
 
     /* Fetching photo documents from FireStore */
     db.collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').orderBy('addedAt').onSnapshot(function(querySnapshot){
@@ -184,18 +171,8 @@ class GroupPhotosScreen extends Component {
               ref.getDownloadURL()
               .then(function(url){
                   console.log('photo_url', url);
-                  photo_url = url;
-                  let photo = {
-                      id: doc.id,                    
-                      uri: photo_url,                    
-                      user: email,
-                      width: doc.data().width,
-                      height: doc.data().height,
-                    }
-                  //global.photos.unshift(photo);
-                  photos.unshift(photo);                
-                  self.setState({ photos: photos, });
-                  global.photos = photos;
+                  self._set_photos_state(doc.id, url, doc.data().width, doc.data().height, self); 
+                  
               })
               .catch(function(error){
                 console.error('Error in fetch_photos_from_cloud function: ', error);
@@ -203,20 +180,32 @@ class GroupPhotosScreen extends Component {
             } 
             else{
               /* if the photo has not yet uploaded to Fire Storage, assembly photo uri with local uri ( assume the photo is in current device ) */
-              let photo = {
-                id: doc.id,
-                uri: doc.data().local_uri,
-                user: email,
-                width: doc.data().width,
-                heigth: doc.data().height,
-              }
-              photos.unshift(photo);
-              self.setState({photos: photos});
-              global.photos = photos;
+              self._set_photos_state(doc.id, doc.data().local_uri, doc.data().width, doc.data().height, self);            
             }           
         })      
     })    
   }
+
+  _set_photos_state = (id, uri, width, height, self) => {
+    /* Check whether the photo is already in global.photos. If not, add it in and setState. */
+    console.log('****** In GroupPhotosScreen _set_photos_state function. ****** ');
+
+    let index = global.photos.findIndex(p=>{
+      return p.id == id;
+    })
+    if (index == -1) {
+      let photo = {
+        id: id,
+        uri: uri,
+        width: width,
+        height: height,
+      }
+      global.photos.unshift(photo);
+      //photos.unshift(photo);
+      self.setState({photos: global.photos});
+      //global.photos = photos;
+    }
+  } 
 
   componentWillMount(){
     // this.setGlobalState();
@@ -255,7 +244,7 @@ _deleteGroup = () => {
             groups.splice(index, 1);
             global.groups = groups;
             //StoreData('groups', groups);
-            cloud_delete_group( this.state.group_id, global.photos, this.state.cover, global.email );
+            cloud_delete_group( this.state.group_id, global.email );
             this.props.navigation.push('Groups');
       }           
         },
@@ -304,7 +293,7 @@ _deleteGroup = () => {
   }
 
   saveNewGroup = (photos) => {
-    /* Save new photo group to Firebase ( Firestore and Storage ) */
+    /* Save new photo group to Firebase ( Firestore and Storage ) and Set state and global values. */
     console.log('****** In saveNewGroup function ******');
 
     const db = firebase.firestore();
@@ -326,21 +315,9 @@ _deleteGroup = () => {
       addedAt: group_timestamp,  
 
     })                     
-    .then(function(){
-        //console.log('New group written with ID: ', group_id);
-        self.setState({
-          group_id: group_id,
-          cover: photos[0].uri,
-          photos: photos
-        });
+    .then(function(){        
+       
 
-        let group = {
-          id: group_id,
-          cover: photos[0].uri,
-          count: photos.length,          
-        }
-        //global.groups.unshift(group);
-        global.groups.splice(1, 0, group); 
     })
     .catch(function(error){
         console.error('Error adding group: ', error);
@@ -361,6 +338,11 @@ _deleteGroup = () => {
       }
       
       photo_id = photo_ref.id;
+      p.id = photo_id;
+
+      cloud_upload_photo(p, group_id, photo_id, email, global.target_size);
+      /* Have to put this out of .then(). Otherwise some photos will not uploaded to storage. */
+
       let photo_size = get_photo_size(p, global.target_size);
       const timestamp = firebase.firestore.FieldValue.serverTimestamp();
       
@@ -375,13 +357,33 @@ _deleteGroup = () => {
           uploaded: false,
         }) 
         .then(function(){
-          cloud_upload_photo(p, group_id, photo_id, email, global.target_size);
+          //cloud_upload_photo(p, group_id, photo_id, email, global.target_size);
         })
         .catch(function(error){
           console.log('Error adding photo: ', error);
-        })       
-        
-    } 
+        })        
+    
+      } 
+
+       /* setState and set global.groups and global.photos. photos use local photos for better performance.  */
+
+        //console.log('New group written with ID: ', group_id);
+
+        self.setState({
+          group_id: group_id,
+          cover: photos[0].uri,
+          photos: photos
+        });
+
+        let group = {
+          id: group_id,
+          cover: photos[0].uri,
+          count: photos.length,          
+        }
+        //global.groups.unshift(group);
+        global.groups.splice(1, 0, group);
+        global.photos = photos;
+
   }
 
   saveNewGroup0 = (photos) => {

@@ -144,45 +144,44 @@ class DisplayPhotoScreen extends Component{
           text: 'Delete', 
           onPress: () => {
             console.log('Yes Pressed');
-            let groups = global.groups;
-            //let group_id = global.group_id;
+            //let groups = global.groups;
+            
             let empty_group = false;
             const group_id = this.state.group_id;
             if (group_id !== 0){
               console.log('group_id: ', group_id);
-              let g_index = groups.findIndex( g => {
+              let g_index = global.groups.findIndex( g => {
                 console.log('g.id: ', g.id);
                 return g.id == group_id;
               });
       
-              console.log('%%% g_index :', g_index);
+              //console.log('%%% g_index :', g_index);
               
               if (g_index > -1){
 
                 let group = groups[g_index];
-                let photos = group.photos;
-
-                //let photos = global.photos;
-                //const uri = this.props.navigation.getParam('photo', []).uri;
+                //let photos = group.photos;
+                
                 const uri = this.state.photo.uri;
-                console.log('photos length from global, before delete: ', photos.length);
+                //console.log('photos length from global, before delete: ', photos.length);
       
-                const p_index = photos.findIndex(p => {
+                const p_index = global.photos.findIndex(p => {
                   //console.log('p.uri: ', p.uri);
                   return p.uri == uri
                 });      
             
                 if (p_index > -1){
                   console.log('photo deleted.');
-                  photos.splice(p_index, 1);          
+                  global.photos.splice(p_index, 1);          
                   
                   console.log('photos length from global, after delete: ', photos.length);          
                 }  
+                group.count = group.count - 1;
 
                 var is_cover = false;
                 const email = global.email;
 
-                if (photos.length == 0){
+                if (group.count == 0){
                   /* empty group should be deleted. */
                   groups.splice(g_index, 1);
                   empty_group = true;
@@ -207,14 +206,12 @@ class DisplayPhotoScreen extends Component{
                     /* Sync with Cloud */
                     is_cover = true;
                     //cloud_delete_photo(first_uri, group_id, false, email);
-                    //cloud_upload_photo(first_photo, group_id, true, email);                 
-
-                  }
-                  
+                    //cloud_upload_photo(first_photo, group_id, true, email); 
+                  }                  
                   groups[g_index] = group;
 
                   // new
-                  cloud_delete_photo(this.state.photo.id, group_id, is_cover, email);
+                  cloud_delete_photo(this.state.photo.id, group_id, email, is_cover);
                 }       
                 
                 global.groups = groups;
