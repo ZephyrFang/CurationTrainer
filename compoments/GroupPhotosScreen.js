@@ -3,7 +3,7 @@ import { Image, ImageBackground, ScrollView, Text, Button, View, TouchableHighli
 import styles from './styles';
 //import uuid from 'react-native-uuid';
 //import AsyncStorage from '@react-native-community/async-storage';
-import {AsyncStorage} from 'react-native';
+//import {AsyncStorage} from 'react-native';
 
 import * as firebase from 'firebase';
 import '@firebase/firestore';
@@ -40,7 +40,7 @@ class GroupPhotosScreen extends Component {
 
   state = {
     photos: [],
-    cover: 0,
+    cover_id: 0,
     group_id: 0,
     //uploaded: false,
   }
@@ -101,7 +101,7 @@ class GroupPhotosScreen extends Component {
     var photos = navigation.getParam('photos', []);
     //console.log('photos.length from navigation: ', photos.length);
     //console.log('photos: ', photos);
-     const cover = navigation.getParam('cover', 0);
+     const cover_id = navigation.getParam('cover_id', 0);
      //const uploaded = navigation.getParam('uploaded', 0);
      var group_id = navigation.getParam('group_id', 0);
      //const new_group = navigation.getParam('new_group', false);
@@ -144,9 +144,9 @@ class GroupPhotosScreen extends Component {
        }  
      }
 
-     if (group_id && cover ){        
+     if (group_id && cover_id ){        
        
-         this.setState({'cover': cover});       
+         this.setState({'cover_id': cover_id});       
      }
   }
 
@@ -280,9 +280,10 @@ _deleteGroup = () => {
   }*/
 
 
-  renderCover = (uri) => {
+  renderCover = (id) => {
     //if ( global.cover == uri){
-    if ( uri == this.state.cover ){
+    //if ( uri == this.state.cover ){
+    if (id == this.state.cover_id ){
       return (
       <View style={{ ...styles.countBadge, backgroundColor: 'none' }}>
       <Image source={require('./images/gold-medal.png')} 
@@ -309,7 +310,7 @@ _deleteGroup = () => {
 
     new_photo_group_ref.set({
       user: global.email,
-      cover: cover_id,
+      cover_id: cover_id,
       cover_local_uri: photos[0].uri,
       count: photos.length,     
       addedAt: group_timestamp,  
@@ -371,13 +372,16 @@ _deleteGroup = () => {
 
         self.setState({
           group_id: group_id,
-          cover: photos[0].uri,
+          //cover: photos[0].uri,
+          cover_id: photos[0].id,
           photos: photos
         });
 
         let group = {
           id: group_id,
-          cover: photos[0].uri,
+          //cover: photos[0].uri,
+          cover_id: photos[0].id,
+          cover_uri: photos[0].uri,
           count: photos.length,          
         }
         //global.groups.unshift(group);
@@ -525,7 +529,7 @@ _deleteGroup = () => {
                                 <TouchableHighlight key={p.uri} onPress={() => {this.props.navigation.push('DisplayPhoto', {
                                   photo: p,
                                   //title: this.getTitle(p),
-                                  cover: this.state.cover,
+                                  cover_id: this.state.cover_id,
                                   group_id: this.state.group_id,
                                   index: i,
                                   photos: photos,
@@ -537,7 +541,7 @@ _deleteGroup = () => {
                                                 style={ styles.image }
                                                 source={{ uri: p.uri }} >            
                                       </ImageBackground>  
-                                      {this.renderCover(p.uri)}                                     
+                                      {this.renderCover(p.id)}                                     
                                   </View>                               
                                 </TouchableHighlight>  
                          
@@ -546,7 +550,7 @@ _deleteGroup = () => {
                       <TouchableHighlight  onPress={() => this.props.navigation.push('SelectPhotos', 
                       { 'add_photos': true, 
                       'group_id': this.state.group_id,
-                      'cover': this.state.cover,
+                      'cover_id': this.state.cover_id,
                       })}>
                         <Image style={styles.image} source={ require('./images/add.png') } />
                       </TouchableHighlight>

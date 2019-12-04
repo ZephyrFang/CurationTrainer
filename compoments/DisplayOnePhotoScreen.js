@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
 import { Image, ScrollView, Text, Button, StyleSheet, View, TouchableHighlight, Alert, Dimensions, BackHandler } from 'react-native';
+import * as firebase from 'firebase';
+import '@firebase/firestore';
+
 import styles from './styles';
 //import {AsyncStorage} from 'react-native';
 import Swiper from 'react-native-swiper';
@@ -45,7 +48,7 @@ class DisplayPhotoScreen extends Component{
 
   state = {
     group_id: 0,
-    cover: 0,
+    cover_id: 0,
     photos: [],
     photo: null,
     //photo_id: 0,
@@ -55,17 +58,16 @@ class DisplayPhotoScreen extends Component{
     max_w: 200,
     max_h: 200,
     //index: 0,
-    //p_i: 0,
-    
+    //p_i: 0,   
 
   }
 
   _backToGroupPhotos = () => {
-    console.log('In _backToGroupPhotos method.');
+    console.log('In _backToGroupPhotos method, this.state.cover_id: ', this.state.cover_id);
 
     this.props.navigation.push('GroupPhotos', {
       'group_id': this.state.group_id,
-      'cover': this.state.cover,      
+      'cover_id': this.state.cover_id,      
     })
   }
 
@@ -80,9 +82,7 @@ class DisplayPhotoScreen extends Component{
       //photo_id: this.state.photo_id,
       icon_path: './images/star.png',
     });
-
   }
-
 
   componentWillMount () {
 
@@ -93,11 +93,12 @@ class DisplayPhotoScreen extends Component{
     const { navigation } = this.props;
     let photo = navigation.getParam('photo', []);  
     console.log('>>>>>>>>> In DisplayPhotoScreen, photo from navigation: ', photo);
-    const cover = navigation.getParam('cover', 0);
+    const cover_id = navigation.getParam('cover_id', 0);
     const group_id = navigation.getParam('group_id', 0);
 
     let is_cover = false;
-    if ( photo.uri == cover ){
+    //if ( photo.uri == cover ){
+    if (photo.id == cover_id){
       is_cover = true;
     }
 
@@ -108,7 +109,7 @@ class DisplayPhotoScreen extends Component{
     this.setState({
       photo: photo,
       //photo_id: photo.id,
-      cover: cover,
+      cover_id: cover_id,
       group_id: group_id,
       is_cover: is_cover,
       index: index,
@@ -162,17 +163,19 @@ class DisplayPhotoScreen extends Component{
                 let group = groups[g_index];
                 //let photos = group.photos;
                 
-                const uri = this.state.photo.uri;
+                //const uri = this.state.photo.uri;
+                const photo_id = this.state.photo.id;
                 //console.log('photos length from global, before delete: ', photos.length);
       
                 const p_index = global.photos.findIndex(p => {
                   //console.log('p.uri: ', p.uri);
-                  return p.uri == uri
+                  //return p.uri == uri
+                  return p.id == photo_id
                 });      
             
-                if (p_index > -1){
-                  console.log('photo deleted.');
-                  global.photos.splice(p_index, 1);          
+                if (p_index > -1){                  
+                  global.photos.splice(p_index, 1); 
+                  console.log('photo deleted.');         
                   
                   console.log('photos length from global, after delete: ', photos.length);          
                 }  
@@ -194,14 +197,15 @@ class DisplayPhotoScreen extends Component{
                   //groups[g_index].cover = global.cover;
                   
                   
-                  if ( this.state.cover == uri ){
+                  //if ( this.state.cover == uri ){
+                  if ( this.state.cover_id == photo_id){
                     /* Cover photo has been deleted, change cover to the first photo */                    
 
-                    const first_uri = photos[0].uri; 
-                    const first_photo = photos[0];
+                    //const first_uri = photos[0].uri; 
+                    const first_photo_id = photos[0].id;
 
-                    this.setState({'cover': first_uri });                            
-                    group.cover = first_uri;
+                    this.setState({'cover_id': first_photo_id });                            
+                    group.cover_id = first_photo_id;
 
                     /* Sync with Cloud */
                     is_cover = true;
@@ -231,7 +235,7 @@ class DisplayPhotoScreen extends Component{
               console.log('$$$$$ Not Empty group');
               this.props.navigation.push('GroupPhotos', {
                 'group_id': this.state.group_id,
-                'cover': this.state.cover,
+                'cover_id': this.state.cover_id,
                 
 
               });
@@ -267,6 +271,58 @@ class DisplayPhotoScreen extends Component{
   }
 
   _setCover = () => {
+    /* Set current photo as cover photo of its group */
+    console.log('****In DisplayOnePhotoScreen setCover method.*****');
+
+    if ( ! this.state.is_cover ){
+
+      const cover_id = this.state.photo.id;      
+      const group_id = this.state.group_id;
+
+      this.props.navigation.setParams({'is_cover': true});
+      this.setState({ 
+        'is_cover': true,
+        'cover_id': cover_id,
+       });      
+
+      let local_uri = '';
+      if (this.state.photo.local_uri){
+        local_uri = this.state.photo.local_uri;
+      }
+      else{
+        if (this.state.photo.uri){
+          local_uri = this.state.photo.uri;
+        }
+      }
+      const cover_local_uri = local_uri;
+
+      /* Update group document in Firestore */
+      let group_ref = firebase.firestore().collection('users').doc(global.email).collection('photo_groups').doc(group_id);
+      group_ref.update({
+        'cover_id': cover_id,
+        'cover_local_uri': cover_local_uri,
+      })   
+      .then(function(){
+        console.log('setCover group_ref updated successfully.');
+      })   
+      .catch(function(error){
+        console.error('setCover group_ref updated Error: ', error);
+      })
+
+      /* Update group in device memory: global.groups */
+      let index = global.groups.findIndex(g=> {
+        return g.id == group_id;
+      })
+
+      console.log('setCover function, group_id: ', group_id, 'index: ', index);
+      if (index > -1){
+        global.groups[index].cover_id = cover_id;
+        global.groups[index].cover_local_uri = this.state.photo.local_uri;
+      }
+    }
+  }
+
+  _setCover0 = () => {
 
     console.log('****In DisplayOnePhotoScreen setCover method.*****');
     //let photo = this.props.navigation.getParam('photo', []);
@@ -329,13 +385,14 @@ class DisplayPhotoScreen extends Component{
   PhotoSwiped = (e, state) => {
     //var photo = global.photos[state.index];
     var photo = this.state.photos[state.index];
-    console.log('photo swiped, index: ', state.index);
+    console.log('In PhotoSwiped function, photo swiped, index: ', state.index);
     console.log('photo.uri: ', photo.uri);
     
 
 
     let is_cover = false;
-    if ( photo.uri == this.state.cover ){
+    //if ( photo.uri == this.state.cover ){
+    if (photo.id == this.state.cover_id){
       is_cover = true;
     }
 
@@ -437,39 +494,8 @@ class DisplayPhotoScreen extends Component{
     });
   }*/
 
-
-
-  /*render(){
-
-    var photos = [];
-    for (let i=0; i < global.photos.length; i++){
-      photos.push(
-        <View key={global.photos[i].uri} style={styles.container}>
-          <Image source={{uri: global.photos[i].uri}} resizeMode='contain'
-        style={{maxHeight: this.state.max_h, maxWidth: this.state.max_w, width: this.state.p_w, height: this.state.p_h, marginLeft: 5, marginRight: 5}} />    
-        </View>
-      )
-    }
-    return (     
-      <Swiper
-      style={styles.wrapper}
-      //                showsButtons
-      //                removeClippedSubviews={false}
-      dotStyle={styles.dotStyle}
-      
-      loop={false}
-      activeDotStyle={styles.activeDotStyle}
-      index={this.state.index}
-      onMomentumScrollEnd={this.PhotoSwiped} 
-      >        
-      {photos}
-      
-    </Swiper>
-    );
-  }*/
-
   render () {
-    console.log('photos in DisplayOnePhotoScreen render function: ', this.state.photos);
+    //onsole.log('photos in DisplayOnePhotoScreen render function: ', this.state.photos);
     return (
         <Swiper style={styles.wrapper}                
                 dotStyle={styles.dotStyle}
@@ -487,9 +513,7 @@ class DisplayPhotoScreen extends Component{
                            cropHeight={this.state.max_h -150 }
                            imageWidth={this.state.max_w - 10}
                            imageHeight={this.state.max_h}
-                >
-
-              
+                >              
                 
                   <Image source={{uri: photo.uri}} resizeMode='contain'
                       style={{

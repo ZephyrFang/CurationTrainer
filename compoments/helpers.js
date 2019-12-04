@@ -85,7 +85,7 @@ export async function RetrieveData (id){
             let first_photo_id = photo_docs[0].id;
             return group_ref.update({
               count:count,
-              cover: first_photo_id,
+              cover_id: first_photo_id,
             });
             
           })  
@@ -197,6 +197,7 @@ export async function RetrieveData (id){
   }
 
   export function cloud_upload_photo_group(group_id, photos, cover, cover_id, email){
+    // Not in use
 
     var photo_id;
     var i;

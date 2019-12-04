@@ -90,7 +90,7 @@ class GroupsScreen extends Component {
             querySnapshot.forEach(function(doc){
                 console.log('*** foreEach snap shot of photo groups *** ');
                 //console.log(doc.id, ' => ', doc.data());
-                let cover_id = doc.data().cover;
+                let cover_id = doc.data().cover_id;
                 //console.log('cover_id: ', cover_id);
                 //let cover_ref = doc.collection('photos').doc(cover_id);
                 let cover_ref = db.collection('users').doc(email).collection('photo_groups').doc(doc.id).collection('photos').doc(cover_id);
@@ -101,25 +101,13 @@ class GroupsScreen extends Component {
                         var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + doc.id + '/' + cover_id);
                         ref.getDownloadURL()
                         .then(function(url){
-                            self._set_groups_state(doc.id, url, doc.data().count, self);
+                            self._set_groups_state(doc.id, cover_id, url, doc.data().count, self);
                             //console.log('cover_url', url);
-                            /*cover_url = url;
-                            let group = {
-                                id: doc.id,                    
-                                cover: cover_url,                                
-                                //user: email,
-                                count: doc.data().count,
-                              }
-                            //global.groups.unshift(group);  
-                            global.groups.splice(1, 0, group);                          
-                            self.setState({ groups: global.groups, });
-                            console.log('<<<<<< <<<<<<<<<<<<<<<<<<<<<<<<< group added into global and state.');
-                            console.log('after fetch, global.groups: ', global.groups);
-                            console.log('after fetch, self.state.groups: ', self.state.groups);*/
+                          
                         })
                     }
                     else{
-                        self._set_groups_state(doc.id, cover.data().local_uri, doc.data().count, self);
+                        self._set_groups_state(doc.id, cover_id, cover.data().local_uri, doc.data().count, self);
                         
                                 
                     }
@@ -129,7 +117,7 @@ class GroupsScreen extends Component {
         })        
       }
 
-    _set_groups_state = (id, cover, count, self) => {
+    _set_groups_state = (id, cover_id, cover_uri, count, self) => {
         /* Check whether the group is already in global.groups. If not, add it in and setState. */
 
         console.log('****** In GroupsScreen _set_groups_state function. ****** ');
@@ -140,7 +128,8 @@ class GroupsScreen extends Component {
         if (index == -1){
             let group = {
                 id: id,
-                cover: cover,
+                cover_id: cover_id,
+                cover_uri: cover_uri,
                 //user: email,
                 count: count,
                 }
@@ -275,7 +264,9 @@ class GroupsScreen extends Component {
                   var i;
                   for ( i=0; i< current_user_groups.length; i++){
                       let g = current_user_groups[i];
-                      cloud_delete_group(g.id, g.photos, g.cover, email);
+
+                      // Todo:
+                      cloud_delete_group(g.id, g.photos, g.cover_id, email);
                   }
                   global.groups = [];
                   this.props.navigation.push('Groups');
@@ -314,7 +305,7 @@ class GroupsScreen extends Component {
                             )}} 
                     renderItem={(post) => {
                         const item = post.item; 
-                        if (item.cover){
+                        if (item.cover_id){
                             return (
                                 <View style={ styles.card }>
                                     <View style={ styles.imageContainer }>
@@ -322,17 +313,15 @@ class GroupsScreen extends Component {
                                             group_id: item.id,
                                             photos: item.photos,
                                             add_photos: false,
-                                            cover: item.cover,
+                                            cover_id: item.cover_id,
                                             //uploaded: item.uploaded,
                                              })}>
-                                          <Image source={{uri:item.cover}} style={ styles.cardImage } />
+                                          <Image source={{uri:item.cover_uri}} style={ styles.cardImage } />
                                         </TouchableHighlight>
                                     </View>
                                     <View style={styles.cardContent}>
-                                      <Text style={styles.count}>({item.count})</Text>
-                                     
-                                    </View>
-                               
+                                      <Text style={styles.count}>({item.count})</Text>                                     
+                                    </View>                               
                                 </View>
                             )
                         }
