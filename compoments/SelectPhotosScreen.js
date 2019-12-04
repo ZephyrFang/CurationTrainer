@@ -74,7 +74,7 @@ class SelectPhotosScreen extends Component {
       const add_photos = navigation.getParam('add_photos', false);
       //var new_group = navigation.getParam('new_group', false);
       const group_id = navigation.getParam('group_id', 0);
-      const cover = navigation.getParam('cover', 0);
+      const cover_id = navigation.getParam('cover_id', 0);
       
       //return (
         navigation.push('GroupPhotos', { 
@@ -82,7 +82,7 @@ class SelectPhotosScreen extends Component {
           add_photos: add_photos,
           //new_group: new_group,
           group_id: group_id,
-          cover: cover,
+          cover_id: cover_id,
         })
         
       //)

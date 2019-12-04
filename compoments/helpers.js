@@ -291,7 +291,7 @@ export async function RetrieveData (id){
     })
     .then(function(uploaded_result){
       let photo_ref = firebase.firestore().collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').doc(photo_id);
-      return photo_ref.update({ uploaded: true })   
+      return photo_ref.update({ uploaded: true })  // update photo document in firestore 
     })
     .then(function(final_result) {
       console.log('final_result Success');      
