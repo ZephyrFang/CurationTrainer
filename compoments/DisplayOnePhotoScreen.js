@@ -314,10 +314,19 @@ class DisplayPhotoScreen extends Component{
         return g.id == group_id;
       })
 
-      console.log('setCover function, group_id: ', group_id, 'index: ', index);
+      console.log('setCover function, group_id: ', group_id, 'index: ', index, 'cover_id: ', cover_id);
       if (index > -1){
         global.groups[index].cover_id = cover_id;
-        global.groups[index].cover_local_uri = this.state.photo.local_uri;
+        var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + cover_id);
+        ref.getDownloadURL()
+        .then(function(url){
+         global.groups[index].cover_uri = url; 
+
+        })
+        .catch(function(error){
+          console.error('Error in _setCover function: ', error);
+        })
+        //global.groups[index].cover_local_uri = this.state.photo.local_uri;
       }
     }
   }
