@@ -68,11 +68,15 @@ class GroupPhotosScreen extends Component {
       photo = photos[i];
       var new_photo_ref = group_ref.collection('photos').doc();      
       let photo_id = new_photo_ref.id;
-      photo.id = photo_id; 
-
-      /* Add photo document to Firestore */
+      
       const photo_size = get_photo_size(photo, global.target_size);      
       const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+      /* add properties to local photo */
+      photo.id = photo_id; 
+      photo.addedAt = timestamp;
+
+      /* Add photo document to Firestore */
       new_photo_ref.set({
         user: email,
         group_id: group_id,
@@ -168,6 +172,7 @@ class GroupPhotosScreen extends Component {
     db.collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').orderBy('addedAt').onSnapshot(function(querySnapshot){
       console.log('...onSnapshopt of fetch_photos_from_cloud...');
         querySnapshot.forEach(function(doc){
+          console.log('photo id: ',doc.id,' addedAt: ', doc.data().addedAt);
             //console.log(doc.id, ' => ', doc.data());  
             //console.log('...forEach snapshot of fetch_photos_from_cloud...'); 
             if (doc.data().uploaded){
@@ -176,7 +181,7 @@ class GroupPhotosScreen extends Component {
               ref.getDownloadURL()
               .then(function(url){
                   //console.log('photo_url', url);
-                  self._set_photos_state(doc.id, url, doc.data().width, doc.data().height, self); 
+                  self._set_photos_state(doc.id, url, doc.data().width, doc.data().height, doc.data().addedAt, self); 
                   
               })
               .catch(function(error){
@@ -185,13 +190,13 @@ class GroupPhotosScreen extends Component {
             } 
             else{
               /* if the photo has not yet uploaded to Fire Storage, assembly photo uri with local uri ( assume the photo is in current device ) */
-              self._set_photos_state(doc.id, doc.data().local_uri, doc.data().width, doc.data().height, self);            
+              self._set_photos_state(doc.id, doc.data().local_uri, doc.data().width, doc.data().height, doc.data().addedAt, self);            
             }           
         })      
     })    
   }
 
-  _set_photos_state = (id, uri, width, height, self) => {
+  _set_photos_state = (id, uri, width, height, addedAt, self) => {
     /* Check whether the photo is already in global.photos. If not, add it in and setState. */
     //console.log('****** In GroupPhotosScreen _set_photos_state function. ****** ');
 
@@ -204,6 +209,7 @@ class GroupPhotosScreen extends Component {
         uri: uri,
         width: width,
         height: height,
+        addedAt: addedAt,
       }
       global.photos.unshift(photo);
       //photos.unshift(photo);
@@ -324,8 +330,7 @@ _deleteGroup = () => {
       addedAt: group_timestamp,  
 
     })                     
-    .then(function(){        
-       
+    .then(function(){               
 
     })
     .catch(function(error){
@@ -390,12 +395,12 @@ _deleteGroup = () => {
           //cover: photos[0].uri,
           cover_id: photos[0].id,
           cover_uri: photos[0].uri,
-          count: photos.length,          
+          count: photos.length,         
+          addedAt: group_timestamp, 
         }
         //global.groups.unshift(group);
         global.groups.splice(1, 0, group);
         global.photos = photos;
-
   }
 
   saveNewGroup0 = (photos) => {
@@ -524,7 +529,13 @@ _deleteGroup = () => {
 
     //console.log('global photos: ', global.photos);
     let photos = this.state.photos;
-    console.log('In render function, photos.length: ', photos.length); 
+    photos.sort((a, b) => (a.addedAt > b.addedAt)? 1: -1);
+    //console.log('In render function, photos.length: ', photos.length); 
+    //if (photos.length == 4 ){
+    //   console.log('photos: ', photos);
+    //}
+    
+
     return (
       <View style={styles.container} >
              

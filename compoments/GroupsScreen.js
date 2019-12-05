@@ -81,7 +81,7 @@ class GroupsScreen extends Component {
     fetch_groups_from_cloud = async (email) => {
         console.log('***** In GroupsScreen fetch_groups_from_cloud function **** ');
         //var storage = firebase.storage();
-        global.groups = ['New Groups', ];
+        global.groups = [];
         this.setState({ groups: global.groups });
         const db = firebase.firestore();
         let self = this;
@@ -101,13 +101,13 @@ class GroupsScreen extends Component {
                         var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + doc.id + '/' + cover_id);
                         ref.getDownloadURL()
                         .then(function(url){
-                            self._set_groups_state(doc.id, cover_id, url, doc.data().count, self);
+                            self._set_groups_state(doc.id, cover_id, url, doc.data().count, doc.data().addedAt, self);
                             //console.log('cover_url', url);
                           
                         })
                     }
                     else{
-                        self._set_groups_state(doc.id, cover_id, cover.data().local_uri, doc.data().count, self);
+                        self._set_groups_state(doc.id, cover_id, cover.data().local_uri, doc.data().count, doc.data().addedAt, self);
                         
                                 
                     }
@@ -117,14 +117,14 @@ class GroupsScreen extends Component {
         })        
       }
 
-    _set_groups_state = (id, cover_id, cover_uri, count, self) => {
+    _set_groups_state = (id, cover_id, cover_uri, count, addedAt, self) => {
         /* Check whether the group is already in global.groups. If not, add it in and setState. */
 
-        console.log('****** In GroupsScreen _set_groups_state function. ****** ');
+        //console.log('****** In GroupsScreen _set_groups_state function. ****** ');
         let index = global.groups.findIndex(g => {
             return g.id == id;
         })
-        console.log('_set_groups_state, index: ', index);
+        //console.log('_set_groups_state, index: ', index);
         if (index == -1){
             let group = {
                 id: id,
@@ -132,11 +132,12 @@ class GroupsScreen extends Component {
                 cover_uri: cover_uri,
                 //user: email,
                 count: count,
+                addedAt: addedAt,
                 }
             //global.groups.unshift(group);    
             global.groups.splice(1, 0, group);                     
             self.setState({ groups: global.groups});
-            console.log('<<<<<< <<<<<<<<<<<<<<<<<<<<<<<<< group added into global and state, group cover using local uri.');
+            //console.log('<<<<<< <<<<<<<<<<<<<<<<<<<<<<<<< group added into global and state, group cover using local uri.');
         }  
     }
 
@@ -277,26 +278,23 @@ class GroupsScreen extends Component {
             ],
             {cancelable: false},      
           );         
-    }    
- 
+    }     
   
-    render (){
-        
+    render (){      
 
     /* Insert 'New Group' to the begin of the groups array to display Add Group icon in the Flatlist */
-    //let groups = this.state.groups;    
-    //let groupsCopy = [...groups];
-    //groupsCopy.unshift("New Group");
-
-    console.log('***** In GroupsScreen render method. this.state.groups: ', this.state.groups);
-
+    let groups = this.state.groups;   
+    groups.sort((a,b) => (a.addedAt < b.addedAt)? 1: -1 ); 
+    let groupsCopy = [...groups];
+    groupsCopy.unshift("New Group");
+    //console.log('***** In GroupsScreen render method. this.state.groups: ', this.state.groups);
  
      return(
       <View style={styles.albums_container}>                   
         
           <FlatList style={styles.list} 
                     contentContainerStyle={styles.listContainer}
-                    data={this.state.groups} 
+                    data={groupsCopy} 
                     horizontal={false} 
                     numColumns={2} 
                     keyExtractor={(item) => { return item.id; }}
