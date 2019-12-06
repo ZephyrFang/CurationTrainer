@@ -55,10 +55,12 @@ export async function RetrieveData (id){
   export function cloud_delete_photo(photo_id, group_id, email, is_cover){
     /* Delete photo from FireStore and Firebase Storage, group won't be empty after photo deleted. */
 
+    console.log('****** In helper.cloud_delete_photo function, is_cover: ', is_cover);
+
     /* Delete photo from Storage */
     var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_id);
     ref.delete().then(() => {
-      console.log('photo deleted from cloud.');
+      console.log('photo deleted from firebase storage.');
     })
     .catch((error) => {
       console.log('Error: ', error);
@@ -71,7 +73,10 @@ export async function RetrieveData (id){
     // Delete photo doc from Firestore
 
     .then(function(){
+      console.log('photo document deleted from Firestore. photo_id: ', photo_id);
       return group_ref.get();
+
+      //return group_ref.collection('photos').orderBy('addedAt').limit(1).get();
     })    
     .then(function(group_doc){
       // Update group photos count
@@ -81,20 +86,32 @@ export async function RetrieveData (id){
       if (is_cover){
           // deleted photo is cover, update group cover and count
           group_ref.collection('photos').orderBy('addedAt').limit(1).get()
-          .then(function(photo_docs){
+          .then(function(querySnapshot){
+            querySnapshot.forEach(function(photo_doc){
+              console.log('............photo_doc: ', photo_doc.id);
+
+              
+            })
+            /*console.log('............photo_docs: ', photo_docs);
             let first_photo_id = photo_docs[0].id;
+            console.log('............new cover id from firestore: ', first_photo_id);
             return group_ref.update({
               count:count,
               cover_id: first_photo_id,
-            });
-            
+            });  */          
           })  
+          .then(function(){
+            console.log('group document updated, new cover_id and count set.')
+          })
       }
       else {
           // deleted photo is not cover, update group count only
           return group_ref.update({
             count: count,
           })
+          .then(function(){
+            console.log('group document updated, new count set.')
+          }) 
       } 
     })   
     .catch(function(error) {

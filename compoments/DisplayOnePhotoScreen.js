@@ -175,7 +175,7 @@ class DisplayPhotoScreen extends Component{
             
                 if (p_index > -1){                  
                   global.photos.splice(p_index, 1); 
-                  console.log('photo deleted.');         
+                  console.log('photo deleted from global.photos.');         
                   
                   console.log('photos length from global, after delete: ', photos.length);          
                 }  
@@ -202,6 +202,7 @@ class DisplayPhotoScreen extends Component{
                     /* Cover photo has been deleted, change cover to the first photo */                    
 
                     //const first_uri = photos[0].uri; 
+                    photos.sort((a,b) => (a.addedAt > b.addedAt)? 1: -1);
                     const first_photo_id = photos[0].id;
 
                     this.setState({'cover_id': first_photo_id });                            
@@ -219,7 +220,7 @@ class DisplayPhotoScreen extends Component{
                 }       
                 
                 global.groups = groups;
-                StoreData('groups', groups);
+                //StoreData('groups', groups);
 
                 /* Sync with Cloud */
                 //cloud_delete_photo(uri, group_id, is_cover, email); 

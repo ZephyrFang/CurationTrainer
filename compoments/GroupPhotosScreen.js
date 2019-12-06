@@ -110,7 +110,7 @@ class GroupPhotosScreen extends Component {
     }
   }
  
-  fetchData = () => {
+  fetchData = () => {    
     console.log('In GroupPhotosScreen fetchData method.')
 
     const { navigation } = this.props;
@@ -118,45 +118,49 @@ class GroupPhotosScreen extends Component {
     var photos = navigation.getParam('photos', []);
     //console.log('photos.length from navigation: ', photos.length);
     //console.log('photos: ', photos);
-     const cover_id = navigation.getParam('cover_id', 0);
-     //const uploaded = navigation.getParam('uploaded', 0);
-     var group_id = navigation.getParam('group_id', 0);
-     //const new_group = navigation.getParam('new_group', false);
-     const add_photos = navigation.getParam('add_photos', false);
-     console.log('add_photos: ', add_photos);
-
-     this.setState({
-       'group_id': group_id,
-       //uploaded: uploaded,
-      });
-
-     if (add_photos){
-       /* Adding new photos to an existing group */
-      
-       this.add_photos_to_group(group_id, photos, global.email);
-       console.log('Adding(pushing) new photos to existing group');
-       
-
-     }
-     else{
-       global.photos = [];
+    const cover_id = navigation.getParam('cover_id', 0);    
+    const group_id = navigation.getParam('group_id', 0);    
+    const add_photos = navigation.getParam('add_photos', false);
+    console.log('add_photos: ', add_photos);
      
-       if (group_id){
-         /* Showing an existing group */
-         console.log('***** In GroupPhotosScreen fetchData function, group_id is true, invoke fatch_photos_from_cloud function.******');
-        this.fetch_photos_from_cloud(global.email, group_id);
-       }     
-       else{
-         /* Creating a new group */
-        console.log('***** In GroupPhotosScreen fetchData function, group_id is false, invoke savNewGroup function.*******');
-         this.saveNewGroup(photos);         
-       }  
-     }
+    if (group_id){ 
 
-     if (group_id && cover_id ){        
-       
-         this.setState({'cover_id': cover_id});       
-     }
+      this.setState({
+        'group_id': group_id,         
+      });    
+
+      if (global.group_id != group_id){
+        /* Showing a diffrent group 
+        GroupsScreen( Click one group ) -> GroupPhotosScreen */
+        console.log('***** In GroupPhotosScreen fetchData function, group_id is true, invoke fetch_photos_from_cloud function.******');
+        this.fetch_photos_from_cloud(global.email, group_id);
+        global.group_id = group_id;
+      }
+      else{
+        if (add_photos){
+          /* Adding new photos to an existing group. 
+          GroupPhotosScreen( Add photos ) -> SelectPhotoScreen -> GroupPhotosScreen */ 
+
+          this.add_photos_to_group(group_id, photos, global.email);
+          console.log('Adding(pushing) new photos to existing group');    
+        }
+        else{
+          /* Photo deleted from this group or group's cover photo changed.
+          GroupPhotosScreen ->  DisplayOnePhotoScreen( Delete / Set Cover ) -> GroupPhotosScreen */
+
+          this.setState({
+            'photos': global.photos,
+            'cover_id': cover_id
+          })
+        }
+      }        
+    }     
+    else{
+      /* Creating a new group 
+      GroupsScreen( Add a group ) -> GroupPhotosScreen */
+      console.log('***** In GroupPhotosScreen fetchData function, group_id is false, invoke savNewGroup function.*******');
+      this.saveNewGroup(photos);         
+    } 
   }
 
   fetch_photos_from_cloud = async (email, group_id) => {
@@ -401,6 +405,7 @@ _deleteGroup = () => {
         //global.groups.unshift(group);
         global.groups.splice(1, 0, group);
         global.photos = photos;
+        global.group_id = group_id;
   }
 
   saveNewGroup0 = (photos) => {
