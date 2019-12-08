@@ -63,10 +63,10 @@ export async function RetrieveData (id){
       console.log('photo deleted from firebase storage.');
     })
     .catch((error) => {
-      console.log('Error: ', error);
+      console.log('Error in cloud_delete_photo function when delete photo from storage: ', error);
     })    
     
-    /* Delete photo from FireStore and update the group */
+    /* Delete photo document from FireStore and update the group */
     var group_ref = firebase.firestore().collection('users').doc(email).collection('photo_groups').doc(group_id);
 
     group_ref.collection('photos').doc(photo_id).delete()
@@ -85,20 +85,18 @@ export async function RetrieveData (id){
         
       if (is_cover){
           // deleted photo is cover, update group cover and count
+
+          let first_photo_id = 0;
           group_ref.collection('photos').orderBy('addedAt').limit(1).get()
           .then(function(querySnapshot){
             querySnapshot.forEach(function(photo_doc){
-              console.log('............photo_doc: ', photo_doc.id);
-
-              
-            })
-            /*console.log('............photo_docs: ', photo_docs);
-            let first_photo_id = photo_docs[0].id;
-            console.log('............new cover id from firestore: ', first_photo_id);
-            return group_ref.update({
-              count:count,
-              cover_id: first_photo_id,
-            });  */          
+              first_photo_id = photo_doc.id;
+              console.log('............photo_doc: ', photo_doc.id);   
+              return group_ref.update({
+                count:count,
+                cover_id: first_photo_id,
+              });            
+            })               
           })  
           .then(function(){
             console.log('group document updated, new cover_id and count set.')
@@ -120,13 +118,13 @@ export async function RetrieveData (id){
     
 
     /* Delete photo from Firebase Storage */
-    var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_id);
+    /*var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + photo_id);
     ref.delete().then(() => {
       console.log('photo deleted from cloud.');
     })
     .catch((error) => {
       console.log('Error: ', error);
-    })
+    })*/
     
   }
 
