@@ -277,13 +277,14 @@ class DisplayPhotoScreen extends Component{
 
     if ( ! this.state.is_cover ){
 
-      const cover_id = this.state.photo.id;      
+      const new_cover_id = this.state.photo.id;      
+      //const cover_id = this.state.cover_id;
       const group_id = this.state.group_id;
 
       this.props.navigation.setParams({'is_cover': true});
       this.setState({ 
         'is_cover': true,
-        'cover_id': cover_id,
+        'cover_id': new_cover_id,
        });      
 
       let local_uri = '';
@@ -300,7 +301,7 @@ class DisplayPhotoScreen extends Component{
       /* Update group document in Firestore */
       let group_ref = firebase.firestore().collection('users').doc(global.email).collection('photo_groups').doc(group_id);
       group_ref.update({
-        'cover_id': cover_id,
+        'cover_id': new_cover_id,
         'cover_local_uri': cover_local_uri,
       })   
       .then(function(){
@@ -315,10 +316,10 @@ class DisplayPhotoScreen extends Component{
         return g.id == group_id;
       })
 
-      console.log('setCover function, group_id: ', group_id, 'index: ', index, 'cover_id: ', cover_id);
+      console.log('setCover function, group_id: ', group_id, 'index: ', index, 'new cover_id: ', new_cover_id);
       if (index > -1){
-        global.groups[index].cover_id = cover_id;
-        var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + cover_id);
+        global.groups[index].cover_id = new_cover_id;
+        var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + new_cover_id);
         ref.getDownloadURL()
         .then(function(url){
          global.groups[index].cover_uri = url; 

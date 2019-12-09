@@ -126,15 +126,17 @@ class GroupPhotosScreen extends Component {
     if (group_id){ 
 
       this.setState({
-        'group_id': group_id,         
+        'group_id': group_id,     
+        'cover_id': cover_id,    
       });    
 
       if (global.group_id != group_id){
         /* Showing a diffrent group 
         GroupsScreen( Click one group ) -> GroupPhotosScreen */
         console.log('***** In GroupPhotosScreen fetchData function, group_id is true, invoke fetch_photos_from_cloud function.******');
-        this.fetch_photos_from_cloud(global.email, group_id);
+        global.photos = [];
         global.group_id = group_id;
+        this.fetch_photos_from_cloud(global.email, group_id); 
       }
       else{
         if (add_photos){
@@ -149,8 +151,7 @@ class GroupPhotosScreen extends Component {
           GroupPhotosScreen ->  DisplayOnePhotoScreen( Delete / Set Cover ) -> GroupPhotosScreen */
 
           this.setState({
-            'photos': global.photos,
-            'cover_id': cover_id
+            'photos': global.photos,            
           })
         }
       }        
@@ -302,6 +303,7 @@ _deleteGroup = () => {
     //if ( global.cover == uri){
     //if ( uri == this.state.cover ){
     if (id == this.state.cover_id ){
+      console.log('id == this.state.cover_id');
       return (
       <View style={{ ...styles.countBadge, backgroundColor: 'none' }}>
       <Image source={require('./images/gold-medal.png')} 
