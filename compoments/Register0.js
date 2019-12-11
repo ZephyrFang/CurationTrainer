@@ -9,7 +9,7 @@ import '@firebase/firestore';
 
 import styles from './styles';
 
-//import { RetrieveData, StoreData } from './helpers.js'
+import { RetrieveData, StoreData } from './helpers.js'
 
 class RegisterScreen extends Component{  
 
@@ -22,32 +22,51 @@ class RegisterScreen extends Component{
 
     register = ( email, password, first_name, last_name ) => {
         const { navigation } = this.props;
-        firebase.auth().createUserWithEmailAndPassword(email, password)
-        .catch(function(error){
-            console.log('Error on RegisterScreen when register: ', error);
+        try {
+            firebase.auth().createUserWithEmailAndPassword(email, password);
 
-        })
-        firebase.auth().onAuthStateChanged(function(user){
-            firebase.firestore().collection('users').doc(user.uid).set({
-                first_name: first_name,
-                last_name: last_name,
-                email: email,
-            })   
-            .then(function(){
-                /* Set local device storage userId */
-                return AsyncStorage.setItem('userId', JSON.stringify(user.uid));
-            })      
-            .then(function(){
-                //global.email = email;
-                //global.userId = user.uid;
-                navigation.push('Groups'); 
-            })  
-            .catch((error)=>{
-                console.error('Error on Rigister Screen: ', error);
-                alert(error);
-            })
-        })       
-                
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    AsyncStorage.setItem('userId', JSON.stringify(user.uid)).then(() => {
+
+                        // Add new user to Firestore. 
+                        const db = firebase.firestore();
+                        /*db.collection('users').doc(email).set({
+                            uid: user.uid,
+                            first_name: first_name,
+                            last_name: last_name,
+                            email: email
+                        })*/
+                        db.collection('users').doc(user.uid).set({
+                            //uid: user.uid,
+                            first_name: first_name,
+                            last_name: last_name,
+                            email: email
+                        })             
+                        .then(function(docRef){
+                            //console.log('Document written with email: ', docRef.email);
+                        })
+                        .catch(function(error){
+                            console.error('Error adding document: ', error);
+
+                        });
+
+                        global.email = email;
+                        global.userId = user.uid;
+                        navigation.push('Groups');  
+                    })           
+                      .catch((error) => {
+                        console.log('Error: ', error);
+                        alert(error);
+                      })                             
+                } 
+
+              });
+        }
+        catch (error) {
+            console.log(error.toString(error));
+            alert(error);
+        }
     }
 
     render() {
@@ -85,10 +104,12 @@ class RegisterScreen extends Component{
                                autoCorrect={false}
                                onChangeText={password => this.setState({password})}                               
                         />
-                    </Item> 
+                    </Item>
+ 
                         
                     <NBButton full rounded success style={{ marginTop: 20 }}
-                            onPress={() => this.register( this.state.email, this.state.password, this.state.first_name, this.state.last_name )}                            
+                            onPress={() => this.register( this.state.email, this.state.password, this.state.first_name, this.state.last_name )}
+                            
                     >
                         <Text>Register</Text>
                     </NBButton>

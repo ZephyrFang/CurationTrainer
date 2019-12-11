@@ -3,8 +3,8 @@ global.photos = [];
 global.group_id = 0;
 
 global.groups = [];
-global.email = '';
-global.userId = 0;
+//global.email = '';
+//global.userId = 0;
 
 global.target_size = 1024;
 

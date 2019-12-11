@@ -4,6 +4,7 @@ import styles from './styles';
 //import AsyncStorage from '@react-native-community/async-storage';
 import { AsyncStorage } from 'react-native';
 import * as firebase from 'firebase';
+import '@firebase/firestore';
 
 
 class ProfileScreen extends Component {
@@ -24,14 +25,35 @@ class ProfileScreen extends Component {
 
   state = {
     email: '',
+    first_name: '',
+    last_name: '',
   }
 
   componentWillMount(){
     console.log('In Profile screen componentWillMount');
 
-      this.setState({email: global.email});
+    this.get_user_info();
+
+ 
       this.props.navigation.setParams({SignOut: this._signOut,});      
-    }  
+  }  
+
+  get_user_info = () => {
+
+    let self = this;
+    firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get()
+    .then(function(doc){
+      self.setState({
+        email: doc.data().email,
+        first_name: doc.data().first_name,
+        last_name: doc.data().last_name,
+      })            
+    })
+    .catch(function(error){
+      console.log('Error in get_user_info function: ', error);
+    })
+
+  }
     
   _signOut = () => {
     const { navigation} = this.props;
@@ -57,8 +79,8 @@ class ProfileScreen extends Component {
                 /* Clear up global properties. Otherwise the next signed In user will see the previous user's photo groups. */
                 global.photos = [];
                 global.groups = [];
-                global.email = '';
-                global.userId = 0;
+                //global.email = '';
+                //global.userId = 0;
   
                 navigation.push('Login');
             });    
@@ -78,7 +100,8 @@ class ProfileScreen extends Component {
     return(
       <View style={styles.container}>
          <Text style={styles.profile_text}>{this.state.email}</Text>
-
+         <Text style={styles.profile_text}>{this.state.first_name}</Text>
+         <Text style={styles.profile_text}>{this.state.last_name}</Text>
       </View>
     );
   }

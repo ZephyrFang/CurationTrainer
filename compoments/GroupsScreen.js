@@ -33,10 +33,9 @@ class GroupsScreen extends Component {
         };
     }
 
-    state = {
-        //groupsCopy: [],
+    state = {        
         groups: [],
-        user_email: '',
+        //user_email: '',
     }
 
     componentWillMount(){
@@ -71,21 +70,27 @@ class GroupsScreen extends Component {
         });
 
         this.setState({
-            user_email: global.email,
+            //user_email: global.email,
         });
         
              
         //this.fetch_groups_from_cloud(global.email); 
     }
 
-    fetch_groups_from_cloud = async (email) => {
+    fetch_groups_from_cloud = () => {
         console.log('***** In GroupsScreen fetch_groups_from_cloud function **** ');
+        let user_id = firebase.auth().currentUser.uid;
+        console.log('... current user id: ', user_id);
+        
         //var storage = firebase.storage();
         global.groups = [];
         this.setState({ groups: global.groups });
         const db = firebase.firestore();
         let self = this;
-        db.collection('users').doc(email).collection('photo_groups').orderBy('addedAt', 'desc').onSnapshot(function(querySnapshot){
+        
+        db.collection('users').doc(user_id).collection('photo_groups')
+        //.where('uid', '==', current_user_id)
+        .orderBy('addedAt', 'desc').onSnapshot(function(querySnapshot){
             console.log('*** Get snap shot of photo groups *** ');
             querySnapshot.forEach(function(doc){
                 console.log('*** foreEach snap shot of photo groups *** ');
@@ -93,12 +98,12 @@ class GroupsScreen extends Component {
                 let cover_id = doc.data().cover_id;
                 //console.log('cover_id: ', cover_id);
                 //let cover_ref = doc.collection('photos').doc(cover_id);
-                let cover_ref = db.collection('users').doc(email).collection('photo_groups').doc(doc.id).collection('photos').doc(cover_id);
+                let cover_ref = db.collection('users').doc(user_id).collection('photo_groups').doc(doc.id).collection('photos').doc(cover_id);
                 
                 cover_ref.get().then(function(cover){
 
                     if (cover.data().uploaded){
-                        var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + doc.id + '/' + cover_id);
+                        var ref = firebase.storage().ref().child('CurationTrainer/' + user_id + '/' + doc.id + '/' + cover_id);
                         ref.getDownloadURL()
                         .then(function(url){
                             self._set_groups_state(doc.id, cover_id, url, doc.data().count, doc.data().addedAt, self);
@@ -148,10 +153,10 @@ class GroupsScreen extends Component {
         console.log('In GroupsScreen getGroups function, global.groups.length is: ', global.groups.length);   
         this.setState({ groups: global.groups });        
 
-        if (global.groups.length <= 1 ) {
+        if (global.groups.length <= 0 ) {
             /* Global.groups is empty, there is only a 'New Group' string in it. Get groups from Cloud */
             console.log('fetching groups from cloud ...');
-            this.fetch_groups_from_cloud(global.email);            
+            this.fetch_groups_from_cloud();            
         }
     }
 
@@ -211,9 +216,9 @@ class GroupsScreen extends Component {
     }
 
     _removeGroups = () => {
-        /* Remove all current user's groups from device */
+        /* Remove all current user's groups from device NOT IN USE */
 
-        console.log('@@@@@ In __clearGroups function.');
+        /*console.log('@@@@@ In __clearGroups function.');
 
         Alert.alert(
             'Alert',
@@ -258,7 +263,7 @@ class GroupsScreen extends Component {
                     console.log('Error when retrieveData in removeGroups function: ', error);
                   })     
 
-                  /* Clone array without reference */
+                  // Clone array without reference 
                   var current_user_groups = JSON.parse(JSON.stringify(global.groups));  
                   const email = global.email;                
 
@@ -277,17 +282,19 @@ class GroupsScreen extends Component {
               },
             ],
             {cancelable: false},      
-          );         
+          );   */      
     }     
   
     render (){      
 
     /* Insert 'New Group' to the begin of the groups array to display Add Group icon in the Flatlist */
-    let groups = this.state.groups;   
+    let groups = this.state.groups;  
+    console.log('***** In GroupsScreen render method. this.state.groups.length: ', this.state.groups.length); 
+    
     groups.sort((a,b) => (a.addedAt < b.addedAt)? 1: -1 ); 
     let groupsCopy = [...groups];
     groupsCopy.unshift("New Group");
-    //console.log('***** In GroupsScreen render method. this.state.groups: ', this.state.groups);
+   
  
      return(
       <View style={styles.albums_container}>                   

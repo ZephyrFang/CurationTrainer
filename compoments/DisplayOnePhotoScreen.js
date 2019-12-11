@@ -182,15 +182,13 @@ class DisplayPhotoScreen extends Component{
                 group.count = group.count - 1;
 
                 var is_cover = false;
-                const email = global.email;
+                const user_id = firebase.auth().currentUser.uid;
 
                 if (group.count == 0){
                   /* empty group should be deleted. */
                   groups.splice(g_index, 1);
-                  empty_group = true;
-
-                  // new 
-                  cloud_delete_group(group_id, email);
+                  empty_group = true;                   
+                  cloud_delete_group(group_id, user_id);
                 }
                 else {
                   group.photos = photos;
@@ -214,9 +212,8 @@ class DisplayPhotoScreen extends Component{
                     //cloud_upload_photo(first_photo, group_id, true, email); 
                   }                  
                   groups[g_index] = group;
-
-                  // new
-                  cloud_delete_photo(this.state.photo.id, group_id, email, is_cover);
+                  
+                  cloud_delete_photo(this.state.photo.id, group_id, user_id, is_cover);
                 }       
                 
                 global.groups = groups;
@@ -297,9 +294,9 @@ class DisplayPhotoScreen extends Component{
         }
       }
       const cover_local_uri = local_uri;
-
+      const user_id = firebase.auth().currentUser.uid;
       /* Update group document in Firestore */
-      let group_ref = firebase.firestore().collection('users').doc(global.email).collection('photo_groups').doc(group_id);
+      let group_ref = firebase.firestore().collection('users').doc(user_id).collection('photo_groups').doc(group_id);
       group_ref.update({
         'cover_id': new_cover_id,
         'cover_local_uri': cover_local_uri,
@@ -319,7 +316,7 @@ class DisplayPhotoScreen extends Component{
       console.log('setCover function, group_id: ', group_id, 'index: ', index, 'new cover_id: ', new_cover_id);
       if (index > -1){
         global.groups[index].cover_id = new_cover_id;
-        var ref = firebase.storage().ref().child('CurationTrainer/' + email + '/' + group_id + '/' + new_cover_id);
+        var ref = firebase.storage().ref().child('CurationTrainer/' + user_id + '/' + group_id + '/' + new_cover_id);
         ref.getDownloadURL()
         .then(function(url){
          global.groups[index].cover_uri = url; 

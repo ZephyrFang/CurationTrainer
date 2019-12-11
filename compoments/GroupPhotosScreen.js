@@ -45,11 +45,12 @@ class GroupPhotosScreen extends Component {
     //uploaded: false,
   }
 
-  add_photos_to_group = (group_id, photos, email) => {
+  add_photos_to_group = (group_id, photos) => {
     /* Add new photos to an existent group */
 
+    const user_id = firebase.auth().currentUser.uid;
     const db = firebase.firestore();
-    var group_ref = db.collection('users').doc(email).collection('photo_groups').doc(group_id);
+    var group_ref = db.collection('users').doc(user_id).collection('photo_groups').doc(group_id);
     group_ref.get()
     .then(function(doc){
       if(doc.exists){
@@ -78,7 +79,7 @@ class GroupPhotosScreen extends Component {
 
       /* Add photo document to Firestore */
       new_photo_ref.set({
-        user: email,
+        uid: user_id,
         group_id: group_id,
         width: photo_size[0],
         height: photo_size[1],
@@ -93,7 +94,7 @@ class GroupPhotosScreen extends Component {
       })
 
       /* Update photo to Firebase Storage */
-      cloud_upload_photo(photo, group_id, new_photo_ref.id, email, global.target_size);
+      cloud_upload_photo(photo, group_id, new_photo_ref.id, user_id, global.target_size);
     }
 
      /* setState and set global.groups and global.photos. photos use local photos for better performance. 
@@ -136,14 +137,14 @@ class GroupPhotosScreen extends Component {
         console.log('***** In GroupPhotosScreen fetchData function, group_id is true, invoke fetch_photos_from_cloud function.******');
         global.photos = [];
         global.group_id = group_id;
-        this.fetch_photos_from_cloud(global.email, group_id); 
+        this.fetch_photos_from_cloud(group_id); 
       }
       else{
         if (add_photos){
           /* Adding new photos to an existing group. 
           GroupPhotosScreen( Add photos ) -> SelectPhotoScreen -> GroupPhotosScreen */ 
 
-          this.add_photos_to_group(group_id, photos, global.email);
+          this.add_photos_to_group(group_id, photos);
           console.log('Adding(pushing) new photos to existing group');    
         }
         else{
@@ -164,17 +165,18 @@ class GroupPhotosScreen extends Component {
     } 
   }
 
-  fetch_photos_from_cloud = async (email, group_id) => {
+  fetch_photos_from_cloud = (group_id) => {
     /* Fetching photos of a given group from Firebase */
 
     console.log('**** In GroupPhotosScreen fetch_photos_from_cloud function *****');
+    const user_id = firebase.auth().currentUser.uid;
     var storage = firebase.storage();    
     const db = firebase.firestore();
     let self = this;
     //let photos = [];
 
     /* Fetching photo documents from FireStore */
-    db.collection('users').doc(email).collection('photo_groups').doc(group_id).collection('photos').orderBy('addedAt').onSnapshot(function(querySnapshot){
+    db.collection('users').doc(user_id).collection('photo_groups').doc(group_id).collection('photos').orderBy('addedAt').onSnapshot(function(querySnapshot){
       console.log('...onSnapshopt of fetch_photos_from_cloud...');
         querySnapshot.forEach(function(doc){
           console.log('photo id: ',doc.id,' addedAt: ', doc.data().addedAt);
@@ -182,7 +184,7 @@ class GroupPhotosScreen extends Component {
             //console.log('...forEach snapshot of fetch_photos_from_cloud...'); 
             if (doc.data().uploaded){
               /* if the photo has uploaded to Fire Storage, assembly photo uri with url from Fire Storage */
-              var ref = storage.ref().child('CurationTrainer/' + email + '/' + group_id + '/' + doc.id);     
+              var ref = storage.ref().child('CurationTrainer/' + user_id + '/' + group_id + '/' + doc.id);     
               ref.getDownloadURL()
               .then(function(url){
                   //console.log('photo_url', url);
@@ -260,7 +262,7 @@ _deleteGroup = () => {
             groups.splice(index, 1);
             global.groups = groups;
             //StoreData('groups', groups);
-            cloud_delete_group( this.state.group_id, global.email );
+            cloud_delete_group( this.state.group_id, firebase.auth().currentUser.uid );
             this.props.navigation.push('Groups');
       }           
         },
@@ -318,9 +320,10 @@ _deleteGroup = () => {
     console.log('****** In saveNewGroup function ******');
 
     const db = firebase.firestore();
+    const user_id = firebase.auth().currentUser.uid;
 
     /* Add new group to firestore */
-    var new_photo_group_ref = db.collection('users').doc(global.email).collection('photo_groups').doc();    
+    var new_photo_group_ref = db.collection('users').doc(user_id).collection('photo_groups').doc();    
     var cover_ref = new_photo_group_ref.collection('photos').doc();
 
     const group_id = new_photo_group_ref.id;
@@ -328,19 +331,23 @@ _deleteGroup = () => {
     const group_timestamp = firebase.firestore.FieldValue.serverTimestamp();
     let self = this;
 
+    //let user_id = firebase.auth().currentUser.uid;
+
     new_photo_group_ref.set({
-      user: global.email,
+      //user: global.email,
+      uid: user_id,
       cover_id: cover_id,
       cover_local_uri: photos[0].uri,
       count: photos.length,     
       addedAt: group_timestamp,  
 
     })                     
-    .then(function(){               
+    .then(function(){      
+      console.log('new photo_group document created.');         
 
     })
     .catch(function(error){
-        console.error('Error adding group: ', error);
+        console.error('Error when create new photo_group document: ', error);
     });   
 
     /* Add photos documents to Firestore and upload photos to Firebase Storage */
@@ -360,7 +367,7 @@ _deleteGroup = () => {
       photo_id = photo_ref.id;
       p.id = photo_id;
 
-      cloud_upload_photo(p, group_id, photo_id, email, global.target_size);
+      cloud_upload_photo(p, group_id, photo_id, user_id, global.target_size);
       /* Have to put this out of .then(). Otherwise some photos will not uploaded to storage. */
 
       let photo_size = get_photo_size(p, global.target_size);
@@ -368,7 +375,8 @@ _deleteGroup = () => {
       
         console.log('photo uploaded. i: ', i, ' photo_id: ', photo_id);
         photo_ref.set({
-          user: email,
+          //user: email,
+          uid: user_id,
           group_id: group_id,
           width: photo_size[0],
           height: photo_size[1],
@@ -380,34 +388,32 @@ _deleteGroup = () => {
           //cloud_upload_photo(p, group_id, photo_id, email, global.target_size);
         })
         .catch(function(error){
-          console.log('Error in saveNewGroup function, adding photo document: ', error);
-        })        
-    
+          console.log('Error in saveNewGroup function when create new photo document: ', error);
+        })  
       } 
 
-       /* setState and set global.groups and global.photos. photos use local photos for better performance.  */
+      /* setState and set global.groups and global.photos. photos use local photos for better performance.  */
+      //console.log('New group written with ID: ', group_id);
 
-        //console.log('New group written with ID: ', group_id);
+      self.setState({
+        group_id: group_id,
+        //cover: photos[0].uri,
+        cover_id: photos[0].id,
+        photos: photos
+      });
 
-        self.setState({
-          group_id: group_id,
-          //cover: photos[0].uri,
-          cover_id: photos[0].id,
-          photos: photos
-        });
-
-        let group = {
-          id: group_id,
-          //cover: photos[0].uri,
-          cover_id: photos[0].id,
-          cover_uri: photos[0].uri,
-          count: photos.length,         
-          addedAt: group_timestamp, 
-        }
-        //global.groups.unshift(group);
-        global.groups.splice(1, 0, group);
-        global.photos = photos;
-        global.group_id = group_id;
+      let group = {
+        id: group_id,
+        //cover: photos[0].uri,
+        cover_id: photos[0].id,
+        cover_uri: photos[0].uri,
+        count: photos.length,         
+        addedAt: group_timestamp, 
+      }
+      //global.groups.unshift(group);
+      global.groups.splice(1, 0, group);
+      global.photos = photos;
+      global.group_id = group_id;
   }
 
   saveNewGroup0 = (photos) => {

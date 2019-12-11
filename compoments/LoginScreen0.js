@@ -7,6 +7,7 @@ import * as firebase from 'firebase';
 import styles from './styles';
 //import { Image, ScrollView, View, TouchableHighlight, FlatList, TouchableOpacity, Alert, Platform, Dimensions } from 'react-native';
 
+import { RetrieveData, StoreData } from './helpers.js'
 
 class LoginScreen extends Component{
     static navigationOptions = ({ navigation }) => {
@@ -19,6 +20,7 @@ class LoginScreen extends Component{
                     onPress={() => {navigation.navigate('Register')}}
                     title='Register'
                 />
+
           </View>
           )  
         };
@@ -32,29 +34,43 @@ class LoginScreen extends Component{
     SignIn = ( email, password ) => {
 
         const { navigation } = this.props;
-        firebase.auth().signInWithEmailAndPassword(email, password)
-        .catch(function(error){
-            if (error.code === 'auth/wrong-password'){
-                alert('Wrong passord');
-            }
-            else{
-                alert(error.message);
-            }
-            console.log('Error on LoginScreen when login: ', error);
-        })
 
-        firebase.auth().onAuthStateChanged(function(user){
-            if (user){
-                AsyncStorage.setItem('userId', JSON.stringify(user.uid))
-                .then(() => {
-                    navigation.push('Groups');
-                })
-                .catch((error) => {
-                    console.log('Error when set uid on device after user Login: ', error);
-                })
-            }
-        })
+        try {
+            firebase.auth().signInWithEmailAndPassword(email, password);
+            /* firebase.auth().onAuthStateChanged(user => {
+                alert(email);
+
+                AsyncStorage.setItem('userId', JSON.stringify(user.uid)).then(() => {
+                    this.props.navigation.push('Groups');  
+                })           
+                  .catch((error) => {
+                    console.log('Error: ', error);
+                  })
+                
+            })*/
+
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    AsyncStorage.setItem('userId', JSON.stringify(user.uid))
+                    .then(() => {
+                        global.email = email;
+                        global.userId = user.uid;
+                        navigation.push('Groups');  
+                    })           
+                    .catch((error) => {
+                        console.log('Error on LoginScreen: ', error);
+                        alert(error);
+                    })                             
+                } 
+
+              });
+        }
+        catch (error){
+            console.log(error.toString(error));
+            alert(error);
+        }
     }
+
 
     render() {
         
@@ -82,7 +98,10 @@ class LoginScreen extends Component{
                     
                     >
                                  <Text>Login</Text>
-                    </NBButton>                   
+                    </NBButton>
+                        
+                    
+                  
                         
                 </Form>
             </Container>
