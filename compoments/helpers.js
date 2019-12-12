@@ -268,12 +268,20 @@ export async function RetrieveData (id){
             global.groups.splice(g_index, 1);
           }
         }
-
       }
-
     }
+  }
 
-
+  export function delete_group_from_memory(group_id, self){
+    let index = global.groups.findIndex(g => {
+      return g.id == group_id;
+    })
+    if (index > -1){
+      global.groups.splice(index, 1);  
+      
+      // Explicitly call setState to re render the screen.
+      self.setState({groups: global.groups});   
+    }
   }
 
   export function get_photo_size(photo, target_size){

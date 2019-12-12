@@ -3,7 +3,7 @@ import { Image, ScrollView, Text, Button, View, TouchableHighlight, FlatList, To
 import styles from './styles';
 //import AsyncStorage from '@react-native-community/async-storage';
 import { AsyncStorage } from 'react-native';
-import { RetrieveData, StoreData, cloud_delete_group } from './helpers.js';
+import { RetrieveData, StoreData, cloud_delete_group, delete_group_from_memory } from './helpers.js';
 import * as GLOBAL from './global.js';
 
 import * as firebase from 'firebase';
@@ -13,12 +13,7 @@ class GroupsScreen extends Component {
     static navigationOptions = ({navigation}) => {
         return {
             title: 'Photo Groups',
-            headerLeft: (
-                <Button 
-                    onPress={navigation.getParam('removeGroups')}
-                    title='Remove All'
-                />
-              ),
+          
               headerRight: (
 
                 <View style={{flex: 0.1, flexDirection:'row' }}>
@@ -91,6 +86,14 @@ class GroupsScreen extends Component {
         db.collection('users').doc(user_id).collection('photo_groups')
         //.where('uid', '==', user_id)
         .orderBy('addedAt', 'desc').onSnapshot(function(querySnapshot){
+
+            querySnapshot.docChanges().forEach(function(change){
+                if (change.type == 'removed'){
+                    console.log('fetch_groupss_from_cloud function, onSnapshot, group removed: ', change.doc.id);
+                    delete_group_from_memory(change.doc.id, self);
+                }
+            })
+
             console.log('*** Get snap shot of photo groups *** ');
             querySnapshot.forEach(function(doc){
                 console.log('*** foreEach snap shot of photo groups *** ');
