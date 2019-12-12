@@ -19,7 +19,7 @@ class AuthLoadingScreen extends Component {
         if (userId_from_device){
             console.log('On AuthLoadingScreen, userId_from_device fetched: ', userId_from_device);
             firebase.auth().onAuthStateChanged(function(user) {
-                console.log('On AuthLoadingScreen, onAuthStateChanged, user: ', user);
+                //console.log('On AuthLoadingScreen, onAuthStateChanged, user: ', user);
                 if (user) {
                     AsyncStorage.setItem('userId', JSON.stringify(user.uid)).then(() => {
                         //console.log('userId_from_device fetched. user.email: ', user.email);

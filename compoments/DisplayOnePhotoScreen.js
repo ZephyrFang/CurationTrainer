@@ -160,7 +160,7 @@ class DisplayPhotoScreen extends Component{
               
               if (g_index > -1){
 
-                let group = groups[g_index];
+                let group = groups[g_index];// ????? where is the groups? 2019.12.12
                 //let photos = group.photos;
                 
                 //const uri = this.state.photo.uri;
@@ -177,7 +177,7 @@ class DisplayPhotoScreen extends Component{
                   global.photos.splice(p_index, 1); 
                   console.log('photo deleted from global.photos.');         
                   
-                  console.log('photos length from global, after delete: ', photos.length);          
+                  console.log('photos length from global, after delete: ', photos.length); // where is the photos?????? 2019.12.12         
                 }  
                 group.count = group.count - 1;
 

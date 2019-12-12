@@ -89,7 +89,7 @@ class GroupsScreen extends Component {
         let self = this;
         
         db.collection('users').doc(user_id).collection('photo_groups')
-        //.where('uid', '==', current_user_id)
+        //.where('uid', '==', user_id)
         .orderBy('addedAt', 'desc').onSnapshot(function(querySnapshot){
             console.log('*** Get snap shot of photo groups *** ');
             querySnapshot.forEach(function(doc){
@@ -100,29 +100,47 @@ class GroupsScreen extends Component {
                 //let cover_ref = doc.collection('photos').doc(cover_id);
                 let cover_ref = db.collection('users').doc(user_id).collection('photo_groups').doc(doc.id).collection('photos').doc(cover_id);
                 
-                cover_ref.get().then(function(cover){
-
+                /*cover_ref.get().then(function(cover){
                     if (cover.data().uploaded){
                         var ref = firebase.storage().ref().child('CurationTrainer/' + user_id + '/' + doc.id + '/' + cover_id);
                         ref.getDownloadURL()
                         .then(function(url){
                             self._set_groups_state(doc.id, cover_id, url, doc.data().count, doc.data().addedAt, self);
-                            //console.log('cover_url', url);
-                          
+                            //console.log('cover_url', url);                          
                         })
                     }
                     else{
-                        self._set_groups_state(doc.id, cover_id, cover.data().local_uri, doc.data().count, doc.data().addedAt, self);
-                        
-                                
+                        self._set_groups_state(doc.id, cover_id, cover.data().local_uri, doc.data().count, doc.data().addedAt, self);  
                     }
-                })               
+                }) */
+                
+                cover_ref.onSnapshot(function(cover){                    
+                    if ( !cover.exists) return;
+                    // Use onSnapshot instead of get to enable user login on different devices updates new group cover automatically
+                    console.log('cover_ref.onSnapshot, cover.data().uploaded: ', cover.data().uploaded);
+                    if (cover.data().uploaded){
+                        var ref = firebase.storage().ref().child('CurationTrainer/' + user_id + '/' + doc.id + '/' + cover_id);
+                        ref.getDownloadURL()
+                        .then(function(url){
+                            self._set_groups_state(doc.id, cover_id, url, doc.data().count, doc.data().addedAt, self, true);
+                            //console.log('cover_url', url);                          
+                        })
+                    }
+                    else{
+                        self._set_groups_state(doc.id, cover_id, cover.data().local_uri, doc.data().count, doc.data().addedAt, self, false);  
+                    }
+                }, function(error){
+                    console.log('Error on GroupsScreen onSnapshot of cover: ', error);
+                    
+                })
             })
             //console.log('1.global.groups: ', global.groups);
-        })        
+        }, function(error){
+            console.log('Error on GroupsScreen onSnapshot of groups: ', error);
+        }) 
       }
 
-    _set_groups_state = (id, cover_id, cover_uri, count, addedAt, self) => {
+    _set_groups_state = (id, cover_id, cover_uri, count, addedAt, self, cover_uploaded) => {
         /* Check whether the group is already in global.groups. If not, add it in and setState. */
 
         //console.log('****** In GroupsScreen _set_groups_state function. ****** ');
@@ -144,6 +162,15 @@ class GroupsScreen extends Component {
             self.setState({ groups: global.groups});
             //console.log('<<<<<< <<<<<<<<<<<<<<<<<<<<<<<<< group added into global and state, group cover using local uri.');
         }  
+        else{
+            if (cover_uploaded){
+                let group = global.groups[index];
+                if(group.cover_uri != cover_uri){
+                    group.cover_uri = cover_uri;
+                    self.setState({ groups: global.groups });
+                }
+            }
+        }
     }
 
     getGroups = () => {
@@ -294,6 +321,7 @@ class GroupsScreen extends Component {
     groups.sort((a,b) => (a.addedAt < b.addedAt)? 1: -1 ); 
     let groupsCopy = [...groups];
     groupsCopy.unshift("New Group");
+    console.log('groupsCopy.length: ', groupsCopy.length);
    
  
      return(

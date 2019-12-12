@@ -9,7 +9,7 @@ import * as firebase from 'firebase';
 import '@firebase/firestore';
 
 //import * as GLOBAL from './global.js';
-import { RetrieveData, StoreData, cloud_delete_group, cloud_upload_photo, cloud_upload_photo_group, get_photo_size } from './helpers.js';
+import { RetrieveData, StoreData, cloud_delete_group, cloud_upload_photo, cloud_upload_photo_group, get_photo_size, delete_photo_from_memory } from './helpers.js';
 
 
 class GroupPhotosScreen extends Component {
@@ -176,9 +176,20 @@ class GroupPhotosScreen extends Component {
     //let photos = [];
 
     /* Fetching photo documents from FireStore */
-    db.collection('users').doc(user_id).collection('photo_groups').doc(group_id).collection('photos').orderBy('addedAt').onSnapshot(function(querySnapshot){
-      console.log('...onSnapshopt of fetch_photos_from_cloud...');
+    db.collection('users').doc(user_id).collection('photo_groups').doc(group_id).collection('photos')
+    //.where('uid', '==', user_id)
+    .orderBy('addedAt').onSnapshot(function(querySnapshot){
+
+      querySnapshot.docChanges().forEach(function(change){
+        if (change.type === 'removed'){
+          console.log('fetch_photos_from_cloud function, onSnapshot, photo removed: ', change.doc.id);
+          delete_photo_from_memory(change.doc.id, self);          
+        }
+      })
+
+      console.log('...onSnapshot of fetch_photos_from_cloud...');      
         querySnapshot.forEach(function(doc){
+        
           console.log('photo id: ',doc.id,' addedAt: ', doc.data().addedAt);
             //console.log(doc.id, ' => ', doc.data());  
             //console.log('...forEach snapshot of fetch_photos_from_cloud...'); 
@@ -188,7 +199,7 @@ class GroupPhotosScreen extends Component {
               ref.getDownloadURL()
               .then(function(url){
                   //console.log('photo_url', url);
-                  self._set_photos_state(doc.id, url, doc.data().width, doc.data().height, doc.data().addedAt, self); 
+                  self._set_photos_state(doc.id, url, doc.data().width, doc.data().height, doc.data().addedAt, self, true); 
                   
               })
               .catch(function(error){
@@ -197,13 +208,15 @@ class GroupPhotosScreen extends Component {
             } 
             else{
               /* if the photo has not yet uploaded to Fire Storage, assembly photo uri with local uri ( assume the photo is in current device ) */
-              self._set_photos_state(doc.id, doc.data().local_uri, doc.data().width, doc.data().height, doc.data().addedAt, self);            
+              self._set_photos_state(doc.id, doc.data().local_uri, doc.data().width, doc.data().height, doc.data().addedAt, self, false);            
             }           
         })      
+    }, function(error){
+      console.log('Error on GroupPhotosScreen onSnapshot of photos: ', error);
     })    
   }
 
-  _set_photos_state = (id, uri, width, height, addedAt, self) => {
+  _set_photos_state = (id, uri, width, height, addedAt, self, uploaded) => {
     /* Check whether the photo is already in global.photos. If not, add it in and setState. */
     //console.log('****** In GroupPhotosScreen _set_photos_state function. ****** ');
 
@@ -222,6 +235,15 @@ class GroupPhotosScreen extends Component {
       //photos.unshift(photo);
       self.setState({photos: global.photos});
       //global.photos = photos;
+    }
+    else{
+      if (uploaded){
+        let photo = global.photos[index];
+        if (photo.uri != uri){
+          photo.uri = uri;
+          self.setState({photos: global.photos});
+        }
+      }
     }
   } 
 

@@ -246,6 +246,36 @@ export async function RetrieveData (id){
     }
   }*/
 
+  export function delete_photo_from_memory(photo_id, self){
+    console.log('In delete_photo_from_memory function');
+    //let empty_group = false;
+    const group_id = self.state.group_id;
+    if (group_id !== 0){
+      let g_index = global.groups.findIndex( g => {
+        return g.id == group_id;
+      })
+      if ( g_index > -1 ){
+        let group = global.groups[g_index];
+        const p_index = global.photos.findIndex(p => {
+          return p.id == photo_id;
+        })
+        if (p_index > -1){
+          global.photos.splice(p_index, 1);
+          self.setState({'photos': global.photos});
+
+          group.count = group.count - 1;
+          if (group.count == 0){
+            global.groups.splice(g_index, 1);
+          }
+        }
+
+      }
+
+    }
+
+
+  }
+
   export function get_photo_size(photo, target_size){
     console.log('>>>>>In helpers.get_photo_size function.<<<<');  
     
@@ -270,6 +300,7 @@ export async function RetrieveData (id){
     //console.log('before return p_w: ', p_w, ', p_h: ', p_h);
     return [p_w, p_h]
   }
+
   export function cloud_upload_photo(photo, group_id, photo_id, user_id, target_size) {
     /* Upload one photo to Cloud (Firebase Storage) */
 
