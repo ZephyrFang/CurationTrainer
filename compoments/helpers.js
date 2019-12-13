@@ -309,6 +309,13 @@ export async function RetrieveData (id){
     return [p_w, p_h]
   }
 
+  export function get_column_number(Dimensions, photo_width){
+    const { width, height} = Dimensions.get('window');
+    let column = width / (photo_width + 20);
+    column = Math.trunc(column);
+    return column;
+  }
+
   export function cloud_upload_photo(photo, group_id, photo_id, user_id, target_size) {
     /* Upload one photo to Cloud (Firebase Storage) */
 

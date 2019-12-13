@@ -81,7 +81,7 @@ var styles = StyleSheet.create({
   card:{
     marginVertical: 8,
     backgroundColor:"white",
-    flexBasis: '45%',
+    //flexBasis: '45%',
     marginHorizontal: 10,
   },
   cardContent: {
@@ -92,7 +92,7 @@ var styles = StyleSheet.create({
   cardImage:{
     flex: 1,
     height: 150,
-    width: null,
+    width: 150,
     //height: 150,
   },
 

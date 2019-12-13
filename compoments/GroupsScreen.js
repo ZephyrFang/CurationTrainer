@@ -3,7 +3,7 @@ import { Image, ScrollView, Text, Button, View, TouchableHighlight, FlatList, To
 import styles from './styles';
 //import AsyncStorage from '@react-native-community/async-storage';
 import { AsyncStorage } from 'react-native';
-import { RetrieveData, StoreData, cloud_delete_group, delete_group_from_memory } from './helpers.js';
+import { RetrieveData, StoreData, cloud_delete_group, delete_group_from_memory, get_column_number } from './helpers.js';
 import * as GLOBAL from './global.js';
 
 import * as firebase from 'firebase';
@@ -24,13 +24,13 @@ class GroupsScreen extends Component {
                 </View>
         
               ),
-
         };
     }
 
     state = {        
         groups: [],
         //user_email: '',
+        column: 3,
     }
 
     componentWillMount(){
@@ -53,7 +53,9 @@ class GroupsScreen extends Component {
           });*/
 
           this.getGroups();  
-  
+          let column = get_column_number(Dimensions, 150);
+          console.log('<<<<<< On GroupsScreen, column: ', column);
+          this.setState({ column: column });  
     }
 
     componentDidMount(){
@@ -328,16 +330,16 @@ class GroupsScreen extends Component {
    
  
      return(
-      <View style={styles.albums_container}>                   
+      <View style={styles.albums_container1}>                   
         
-          <FlatList style={styles.list} 
-                    contentContainerStyle={styles.listContainer}
+          <FlatList style={styles.list1} 
+                    contentContainerStyle={styles.listContainer1}
                     data={groupsCopy} 
                     horizontal={false} 
-                    numColumns={2} 
+                    numColumns={this.state.column} 
                     keyExtractor={(item) => { return item.id; }}
                     ItemSeparatorComponent={() => { 
-                        return ( <View style={styles.separator} /> 
+                        return ( <View style={styles.separator1} /> 
                             )}} 
                     renderItem={(post) => {
                         const item = post.item; 

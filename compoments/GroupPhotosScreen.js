@@ -9,7 +9,7 @@ import * as firebase from 'firebase';
 import '@firebase/firestore';
 
 //import * as GLOBAL from './global.js';
-import { RetrieveData, StoreData, cloud_delete_group, cloud_upload_photo, cloud_upload_photo_group, get_photo_size, delete_photo_from_memory } from './helpers.js';
+import { RetrieveData, StoreData, cloud_delete_group, cloud_upload_photo, cloud_upload_photo_group, get_photo_size, delete_photo_from_memory, get_column_number } from './helpers.js';
 
 
 class GroupPhotosScreen extends Component {
@@ -42,6 +42,7 @@ class GroupPhotosScreen extends Component {
     photos: [],
     cover_id: 0,
     group_id: 0,
+    //column: 2,
     //uploaded: false,
   }
 
@@ -251,7 +252,9 @@ class GroupPhotosScreen extends Component {
     // this.setGlobalState();
     this.fetchData();
     this.props.navigation.setParams({DeleteGroup: this._deleteGroup,});   
-    //this.props.navigation.setParams({UploadGroup: this.cloud_upload_group,});     
+    //this.props.navigation.setParams({UploadGroup: this.cloud_upload_group,});  
+    //let column = get_column_number(Dimensions, 150);   
+    //this.setState({column: column});
 }
 
 _deleteGroup = () => {
