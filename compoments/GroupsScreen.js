@@ -14,7 +14,7 @@ class GroupsScreen extends Component {
         return {
             title: 'Photo Groups',
           
-              headerRight: (
+              headerLeft: (
 
                 <View style={{flex: 0.1, flexDirection:'row' }}>
  
