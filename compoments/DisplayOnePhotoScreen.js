@@ -160,7 +160,8 @@ class DisplayPhotoScreen extends Component{
               
               if (g_index > -1){
 
-                let group = groups[g_index];// ????? where is the groups? 2019.12.12
+                //let group = groups[g_index];// ????? where is the groups? 2019.12.12
+                let group = global.groups[g_index]; // 2019.12.16
                 //let photos = group.photos;
                 
                 //const uri = this.state.photo.uri;
@@ -177,7 +178,8 @@ class DisplayPhotoScreen extends Component{
                   global.photos.splice(p_index, 1); 
                   console.log('photo deleted from global.photos.');         
                   
-                  console.log('photos length from global, after delete: ', photos.length); // where is the photos?????? 2019.12.12         
+                  //console.log('photos length from global, after delete: ', photos.length); // where is the photos?????? 2019.12.12 
+                  console.log('photos length from global, after delete: ', global.photos.length); // 2019.12.16         
                 }  
                 group.count = group.count - 1;
 
@@ -186,12 +188,14 @@ class DisplayPhotoScreen extends Component{
 
                 if (group.count == 0){
                   /* empty group should be deleted. */
-                  groups.splice(g_index, 1);
+                  //groups.splice(g_index, 1); // 2019.12.16
+                  global.groups.splice(g_index, 1); // 2019.12.16
                   empty_group = true;                   
                   cloud_delete_group(group_id, user_id);
                 }
                 else {
-                  group.photos = photos;
+                  //group.photos = photos; // 2019.12.16   
+                  group.photos = global.photos; // 2019.12.16   
                   //groups[g_index].cover = global.cover;
                   
                   
@@ -200,10 +204,16 @@ class DisplayPhotoScreen extends Component{
                     /* Cover photo has been deleted, change cover to the first photo */                    
 
                     //const first_uri = photos[0].uri; 
-                    photos.sort((a,b) => (a.addedAt > b.addedAt)? 1: -1);
-                    const first_photo_id = photos[0].id;
+                    //photos.sort((a,b) => (a.addedAt > b.addedAt)? 1: -1);// 2019.12.16   
+                    //const first_photo_id = photos[0].id;// 2019.12.16   
 
-                    this.setState({'cover_id': first_photo_id });                            
+                    global.photos.sort((a,b) => (a.addedAt > b.addedAt)? 1: -1);// 2019.12.16   
+                    const first_photo_id = global.photos[0].id;// 2019.12.16   
+
+                    this.setState({
+                      cover_id: first_photo_id,
+                      photos: global.photos,
+                   });                            
                     group.cover_id = first_photo_id;
 
                     /* Sync with Cloud */
@@ -211,12 +221,14 @@ class DisplayPhotoScreen extends Component{
                     //cloud_delete_photo(first_uri, group_id, false, email);
                     //cloud_upload_photo(first_photo, group_id, true, email); 
                   }                  
-                  groups[g_index] = group;
+                  //groups[g_index] = group; // 2019.12.16
+                  global.groups[g_index] = group; // 2019.12.16
                   
                   cloud_delete_photo(this.state.photo.id, group_id, user_id, is_cover);
                 }       
                 
-                global.groups = groups;
+                //global.groups = groups; // 2019.12.16
+
                 //StoreData('groups', groups);
 
                 /* Sync with Cloud */
@@ -280,8 +292,8 @@ class DisplayPhotoScreen extends Component{
 
       this.props.navigation.setParams({'is_cover': true});
       this.setState({ 
-        'is_cover': true,
-        'cover_id': new_cover_id,
+        is_cover: true,
+        cover_id: new_cover_id,
        });      
 
       let local_uri = '';

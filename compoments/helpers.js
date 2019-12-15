@@ -261,7 +261,7 @@ export async function RetrieveData (id){
         })
         if (p_index > -1){
           global.photos.splice(p_index, 1);
-          self.setState({'photos': global.photos});
+          self.setState({photos: global.photos});
 
           group.count = group.count - 1;
           if (group.count == 0){

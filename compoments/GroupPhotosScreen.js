@@ -101,7 +101,7 @@ class GroupPhotosScreen extends Component {
      /* setState and set global.groups and global.photos. photos use local photos for better performance. 
      each photo's id has set to the same as photo document */
     global.photos.push(...photos);
-    this.setState({'photos': global.photos});
+    this.setState({photos: global.photos});
     console.log('after adding photos, this.state.photos.length: ', this.state.photos.length);
     let index = global.groups.findIndex(g=>{
          return g.id == group_id;
@@ -129,8 +129,8 @@ class GroupPhotosScreen extends Component {
     if (group_id){ 
 
       this.setState({
-        'group_id': group_id,     
-        'cover_id': cover_id,    
+        group_id: group_id,     
+        cover_id: cover_id,    
       });    
 
       if (global.group_id != group_id){
@@ -154,7 +154,7 @@ class GroupPhotosScreen extends Component {
           GroupPhotosScreen ->  DisplayOnePhotoScreen( Delete / Set Cover ) -> GroupPhotosScreen */
 
           this.setState({
-            'photos': global.photos,            
+            photos: global.photos,            
           })
         }
       }        
@@ -192,8 +192,11 @@ class GroupPhotosScreen extends Component {
 
       console.log('...onSnapshot of fetch_photos_from_cloud...');      
         querySnapshot.forEach(function(doc){
-        
-          console.log('photo id: ',doc.id,' addedAt: ', doc.data().addedAt);
+
+          if (doc.exists){
+            console.log('doc exists, doc.id: ', doc.id);
+
+          //console.log('photo id: ',doc.id,' addedAt: ', doc.data().addedAt);
             //console.log(doc.id, ' => ', doc.data());  
             //console.log('...forEach snapshot of fetch_photos_from_cloud...'); 
             if (doc.data().uploaded){
@@ -212,7 +215,10 @@ class GroupPhotosScreen extends Component {
             else{
               /* if the photo has not yet uploaded to Fire Storage, assembly photo uri with local uri ( assume the photo is in current device ) */
               self._set_photos_state(doc.id, doc.data().local_uri, doc.data().width, doc.data().height, doc.data().addedAt, self, false);            
-            }           
+            } 
+
+          }
+                  
         })      
     }, function(error){
       console.log('Error on GroupPhotosScreen onSnapshot of photos: ', error);
