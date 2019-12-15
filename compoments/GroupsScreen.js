@@ -90,6 +90,7 @@ class GroupsScreen extends Component {
         .orderBy('addedAt', 'desc').onSnapshot(function(querySnapshot){
 
             querySnapshot.docChanges().forEach(function(change){
+                // To sync different devices when group deleted.
                 if (change.type == 'removed'){
                     console.log('fetch_groupss_from_cloud function, onSnapshot, group removed: ', change.doc.id);
                     delete_group_from_memory(change.doc.id, self);
@@ -103,25 +104,12 @@ class GroupsScreen extends Component {
                 let cover_id = doc.data().cover_id;
                 //console.log('cover_id: ', cover_id);
                 //let cover_ref = doc.collection('photos').doc(cover_id);
-                let cover_ref = db.collection('users').doc(user_id).collection('photo_groups').doc(doc.id).collection('photos').doc(cover_id);
+                let cover_ref = db.collection('users').doc(user_id).collection('photo_groups').doc(doc.id).collection('photos').doc(cover_id);   
                 
-                /*cover_ref.get().then(function(cover){
-                    if (cover.data().uploaded){
-                        var ref = firebase.storage().ref().child('CurationTrainer/' + user_id + '/' + doc.id + '/' + cover_id);
-                        ref.getDownloadURL()
-                        .then(function(url){
-                            self._set_groups_state(doc.id, cover_id, url, doc.data().count, doc.data().addedAt, self);
-                            //console.log('cover_url', url);                          
-                        })
-                    }
-                    else{
-                        self._set_groups_state(doc.id, cover_id, cover.data().local_uri, doc.data().count, doc.data().addedAt, self);  
-                    }
-                }) */
-                
-                cover_ref.onSnapshot(function(cover){                    
-                    if ( !cover.exists) return;
-                    // Use onSnapshot instead of get to enable user login on different devices updates new group cover automatically
+                cover_ref.onSnapshot(function(cover){        
+                    // Use onSnapshot instead of get to enable user login on different devices updates new group cover automatically 
+
+                    if ( !cover.exists) return;                    
                     console.log('cover_ref.onSnapshot, cover.data().uploaded: ', cover.data().uploaded);
                     if (cover.data().uploaded){
                         var ref = firebase.storage().ref().child('CurationTrainer/' + user_id + '/' + doc.id + '/' + cover_id);
@@ -171,7 +159,8 @@ class GroupsScreen extends Component {
             if (cover_uploaded){
                 let group = global.groups[index];
                 if(group.cover_uri != cover_uri){
-                    group.cover_uri = cover_uri;
+                    group.cover_uri = cover_uri; // change photo uri from local uri to cloud url if photo has uploaded to cloud 
+                    group.cover_id = cover_id; // When group cover changed, Sync different devices on GroupPhotos Screen.
                     self.setState({ groups: global.groups });
                 }
             }
@@ -326,8 +315,7 @@ class GroupsScreen extends Component {
     groups.sort((a,b) => (a.addedAt < b.addedAt)? 1: -1 ); 
     let groupsCopy = [...groups];
     groupsCopy.unshift("New Group");
-    console.log('groupsCopy.length: ', groupsCopy.length);
-   
+    console.log('groupsCopy.length: ', groupsCopy.length);   
  
      return(
       <View style={styles.albums_container1}>                   

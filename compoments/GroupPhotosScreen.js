@@ -120,7 +120,8 @@ class GroupPhotosScreen extends Component {
     var photos = navigation.getParam('photos', []);
     //console.log('photos.length from navigation: ', photos.length);
     //console.log('photos: ', photos);
-    const cover_id = navigation.getParam('cover_id', 0);    
+    const cover_id = navigation.getParam('cover_id', 0);   
+    console.log('>>>>>>>>>>>>>>>>>> Cover Id from Navigation: ', cover_id); 
     const group_id = navigation.getParam('group_id', 0);    
     const add_photos = navigation.getParam('add_photos', false);
     console.log('add_photos: ', add_photos);
@@ -182,10 +183,11 @@ class GroupPhotosScreen extends Component {
     .orderBy('addedAt').onSnapshot(function(querySnapshot){
 
       querySnapshot.docChanges().forEach(function(change){
+        // To sync different devices when photo deleted.
         if (change.type === 'removed'){
           console.log('fetch_photos_from_cloud function, onSnapshot, photo removed: ', change.doc.id);
           delete_photo_from_memory(change.doc.id, self);          
-        }
+        }       
       })
 
       console.log('...onSnapshot of fetch_photos_from_cloud...');      
