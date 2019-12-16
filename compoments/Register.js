@@ -25,8 +25,17 @@ class RegisterScreen extends Component{
         firebase.auth().createUserWithEmailAndPassword(email, password)
         .catch(function(error){
             console.log('Error on RegisterScreen when register: ', error);
-
+            //alert(error);
+            Alert.alert(
+                'Error',
+                error.message,
+                [                             
+                  { text: 'OK', onPress: () => console.log('OK Pressed') },
+                ],
+                { cancelable: false }
+              );
         })
+        
         firebase.auth().onAuthStateChanged(function(user){
             firebase.firestore().collection('users').doc(user.uid).set({
                 first_name: first_name,
@@ -43,8 +52,9 @@ class RegisterScreen extends Component{
                 navigation.push('Groups'); 
             })  
             .catch((error)=>{
+                alert(error);                
                 console.error('Error on Rigister Screen: ', error);
-                alert(error);
+                //alert(error);
             })
         })       
                 
